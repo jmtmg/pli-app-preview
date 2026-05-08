@@ -21,9 +21,10 @@ export interface Msg {
 
 interface Props {
   msg: Msg;
+  highlighted?: boolean;
 }
 
-export function MessageBubble({ msg }: Props) {
+export function MessageBubble({ msg, highlighted = false }: Props) {
   const out = msg.direction === "out";
   return (
     <div className={clsx("flex flex-col gap-1", out ? "items-end" : "items-start")}>
@@ -36,6 +37,7 @@ export function MessageBubble({ msg }: Props) {
         className={clsx(
           "max-w-[88%] md:max-w-[78%] px-3.5 py-2.5 text-[14px] leading-snug whitespace-pre-wrap break-words",
           "rounded-[18px] border",
+          highlighted && "ring-2 ring-accent/70 shadow-[0_0_0_6px_rgba(201,164,125,0.10)]",
           out
             ? "bg-bubble-out border-accent/20 rounded-br-md"
             : "bg-bubble-in border-border rounded-bl-md",

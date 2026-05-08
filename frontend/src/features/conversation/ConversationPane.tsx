@@ -3,6 +3,7 @@
  * Sprint 2 · FE — lecture.
  * Sprint 3 · FE+BE — composer + envoi.
  */
+import { useEffect, useRef } from "react";
 import { useMessages, useContact } from "@/api/queries";
 import { MessageBubble } from "./MessageBubble";
 import { Composer } from "./Composer";
@@ -11,13 +12,22 @@ import { Avatar } from "@/components/Avatar";
 
 interface Props {
   contactId: string | null;
+  highlightedMessageId?: string | null;
   onClose: () => void;
   onOpenContact: () => void;
 }
 
-export function ConversationPane({ contactId, onClose, onOpenContact }: Props) {
+export function ConversationPane({ contactId, highlightedMessageId = null, onClose, onOpenContact }: Props) {
   const { data: messages } = useMessages(contactId);
   const { data: contact } = useContact(contactId);
+  const highlightedRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!highlightedMessageId || !messages?.some((message) => message.id === highlightedMessageId)) return;
+    window.setTimeout(() => {
+      highlightedRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 50);
+  }, [highlightedMessageId, messages]);
 
   if (!contactId) {
     return <EmptyState filter="none" />;
@@ -62,7 +72,18 @@ export function ConversationPane({ contactId, onClose, onOpenContact }: Props) {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-2.5">
-        {(messages ?? []).map(m => <MessageBubble key={m.id} msg={m} />)}
+        {(messages ?? []).map((message) => {
+          const highlighted = message.id === highlightedMessageId;
+          return (
+            <div
+              key={message.id}
+              ref={highlighted ? highlightedRef : undefined}
+              data-message-id={message.id}
+            >
+              <MessageBubble msg={message} highlighted={highlighted} />
+            </div>
+          );
+        })}
       </div>
 
       <Composer contactId={contactId} />

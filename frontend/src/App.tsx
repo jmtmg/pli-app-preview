@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConversationList } from "@/features/list/ConversationList";
 import { ConversationPane } from "@/features/conversation/ConversationPane";
 import { Drawer } from "@/features/drawer/Drawer";
 import { ContactSheet } from "@/features/contact/ContactSheet";
+import { SearchModal } from "@/features/search/SearchModal";
+import { useAccounts } from "@/api/queries";
 
 /**
  * Local MVP shell — 3 responsive panes.
@@ -16,7 +18,24 @@ export default function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { data: accounts } = useAccounts();
+
+  const activeAccountId = accounts?.find((account) => account.is_active)?.id ?? accounts?.[0]?.id ?? null;
+  const effectiveSearchAccountId = selectedAccountId ?? activeAccountId;
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <div
@@ -35,8 +54,12 @@ export default function AppShell() {
       <div className={selectedContactId ? "hidden md:flex md:flex-col min-h-0" : "flex flex-col min-h-0"}>
         <ConversationList
           accountId={selectedAccountId}
-          onSelect={setSelectedContactId}
+          onSelect={(contactId) => {
+            setSelectedContactId(contactId);
+            setSelectedMessageId(null);
+          }}
           onOpenDrawer={() => setDrawerOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
           selectedId={selectedContactId}
         />
       </div>
@@ -44,6 +67,7 @@ export default function AppShell() {
       <div className={selectedContactId ? "flex flex-col min-h-0" : "hidden md:flex md:flex-col min-h-0"}>
         <ConversationPane
           contactId={selectedContactId}
+          highlightedMessageId={selectedMessageId}
           onClose={() => setSelectedContactId(null)}
           onOpenContact={() => setContactSheetOpen(true)}
         />
@@ -63,6 +87,17 @@ export default function AppShell() {
           />
         </div>
       )}
+
+      <SearchModal
+        open={searchOpen}
+        accountId={effectiveSearchAccountId}
+        onClose={() => setSearchOpen(false)}
+        onSelectContact={(target) => {
+          setSelectedContactId(target.contactId);
+          setSelectedMessageId(target.kind === "message" ? target.resultId : null);
+          setContactSheetOpen(false);
+        }}
+      />
     </div>
   );
 }

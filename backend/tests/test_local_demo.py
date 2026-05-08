@@ -39,14 +39,20 @@ def test_local_demo_reset_seeds_backend_read_slice(client) -> None:  # type: ign
     assert contact["company"] == "JMJ Consulting"
     assert contact["attachments"][0]["filename"] == "mvp-local-demo.pdf"
 
-    contact_search = client.get("/search", params={"q": "JMJ"}).json()
+    contact_search = client.get(
+        "/search", params={"q": "JMJ", "account_id": "demo-account-gmail"}
+    ).json()
     assert any(result["id"] == "demo-contact-alice" for result in contact_search["contacts"])
 
-    mvp_search = client.get("/search", params={"q": "MVP"}).json()
+    mvp_search = client.get(
+        "/search", params={"q": "MVP", "account_id": "demo-account-gmail"}
+    ).json()
     assert any(result["id"] == "demo-msg-001" for result in mvp_search["messages"])
     assert any(result["filename"] == "mvp-local-demo.pdf" for result in mvp_search["attachments"])
 
-    test_search = client.get("/search", params={"q": "test.pli"}).json()
+    test_search = client.get(
+        "/search", params={"q": "test.pli", "account_id": "demo-account-gmail"}
+    ).json()
     assert any(result["email"] == "test.pli@demo-pli.com" for result in test_search["contacts"])
 
 
@@ -57,6 +63,69 @@ def test_local_demo_reset_is_idempotent(client) -> None:  # type: ignore[no-unty
     assert second.status_code == 200
     assert first.json()["counts"] == second.json()["counts"]
     assert len(client.get("/conversations?filter=all").json()["items"]) == 4
+
+
+def test_search_is_scoped_to_requested_account(client) -> None:  # type: ignore[no-untyped-def]
+    """La recherche MVP ne doit jamais fuiter des résultats d'un autre compte."""
+    client.post("/demo/reset")
+
+    from pli.db import get_conn
+
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO accounts(id, provider, email, display_name, avatar_color, last_sync_at)
+               VALUES (?, 'gmail', ?, ?, '#444444', 1778270000)""",
+            ("other-account", "other@example.com", "Autre compte"),
+        )
+        conn.execute(
+            """INSERT INTO contacts(id, account_id, email, email_normalized, display_name,
+                                      company, kind, last_msg_at, unread_count)
+               VALUES (?, ?, ?, ?, ?, ?, 'human', 1778270000, 1)""",
+            (
+                "other-contact-hidden",
+                "other-account",
+                "hidden@example.com",
+                "hidden@example.com",
+                "Hidden Other",
+                "Other Co",
+            ),
+        )
+        conn.execute(
+            """INSERT INTO messages(id, account_id, contact_id, provider_id, direction,
+                                      subject, snippet, body_text, from_email, received_at)
+               VALUES (?, ?, ?, ?, 'in', ?, ?, ?, ?, 1778270000)""",
+            (
+                "other-message-hidden",
+                "other-account",
+                "other-contact-hidden",
+                "other-provider-hidden",
+                "Hidden account result",
+                "NeedleOtherAccount",
+                "NeedleOtherAccount should not leak to demo account search",
+                "hidden@example.com",
+            ),
+        )
+        conn.commit()
+
+    scoped = client.get(
+        "/search",
+        params={"q": "NeedleOtherAccount", "account_id": "demo-account-gmail"},
+    ).json()
+    assert scoped == {"contacts": [], "messages": [], "attachments": []}
+
+    other = client.get(
+        "/search",
+        params={"q": "NeedleOtherAccount", "account_id": "other-account"},
+    ).json()
+    assert any(result["id"] == "other-message-hidden" for result in other["messages"])
+
+
+def test_search_requires_account_id(client) -> None:  # type: ignore[no-untyped-def]
+    client.post("/demo/reset")
+
+    response = client.get("/search", params={"q": "test.pli"})
+
+    assert response.status_code == 422
 
 
 def test_local_demo_reset_rejects_cloud_mode(client, monkeypatch) -> None:  # type: ignore[no-untyped-def]

@@ -16,9 +16,10 @@ Ce qui est terminé et vérifié :
 - seed démo déterministe OK ;
 - comptes, conversations, messages, recherche/contact/attachments de démo OK ;
 - adresse de test locale créée et seedée : `test.pli@demo-pli.com` ;
-- composer local `POST /messages/send` OK ;
+- composer local `POST /messages/send` fonctionnel ;
 - frontend React/Vite MVP buildable et servable ;
 - design Cowork pris en compte via `PLI_DESIGN_SOURCE_OF_TRUTH.md` et première passe UI alignée mobile-first ;
+- recherche globale frontend câblée sur `/search`, limitée au compte actif, avec modal mobile, raccourci `Cmd/Ctrl+K`, résultats contacts/messages/PJ et highlight ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;

@@ -22,10 +22,11 @@ interface Props {
   accountId: string | null;
   onSelect: (id: string) => void;
   onOpenDrawer: () => void;
+  onOpenSearch: () => void;
   selectedId: string | null;
 }
 
-export function ConversationList({ accountId, onSelect, onOpenDrawer, selectedId }: Props) {
+export function ConversationList({ accountId, onSelect, onOpenDrawer, onOpenSearch, selectedId }: Props) {
   const [filter, setFilter] = useState<FilterKind>("humans");
   const {
     data,
@@ -64,7 +65,7 @@ export function ConversationList({ accountId, onSelect, onOpenDrawer, selectedId
       className="flex flex-col min-h-0 bg-bg border-r border-border"
       aria-busy={isLoading || undefined}
     >
-      <Header onOpenDrawer={onOpenDrawer} />
+      <Header onOpenDrawer={onOpenDrawer} onOpenSearch={onOpenSearch} />
       <FilterBar value={filter} onChange={setFilter} />
       <div
         data-scroll-container
