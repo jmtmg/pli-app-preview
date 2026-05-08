@@ -169,3 +169,18 @@ CREATE VIRTUAL TABLE IF NOT EXISTS attachments_fts USING fts5(
     content_rowid='rowid',
     tokenize='unicode61 remove_diacritics 2'
 );
+
+CREATE TRIGGER IF NOT EXISTS attachments_fts_ai AFTER INSERT ON attachments BEGIN
+    INSERT INTO attachments_fts(rowid, filename, ocr_text)
+    VALUES (new.rowid, new.filename, new.ocr_text);
+END;
+CREATE TRIGGER IF NOT EXISTS attachments_fts_ad AFTER DELETE ON attachments BEGIN
+    INSERT INTO attachments_fts(attachments_fts, rowid, filename, ocr_text)
+    VALUES ('delete', old.rowid, old.filename, old.ocr_text);
+END;
+CREATE TRIGGER IF NOT EXISTS attachments_fts_au AFTER UPDATE ON attachments BEGIN
+    INSERT INTO attachments_fts(attachments_fts, rowid, filename, ocr_text)
+    VALUES ('delete', old.rowid, old.filename, old.ocr_text);
+    INSERT INTO attachments_fts(rowid, filename, ocr_text)
+    VALUES (new.rowid, new.filename, new.ocr_text);
+END;

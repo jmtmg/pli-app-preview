@@ -18,7 +18,7 @@ DELETE /accounts/{id}
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Any, Literal, cast
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -48,7 +48,7 @@ class AccountSummary(BaseModel):
     last_sync_at: datetime | None = None
 
 
-def _row_to_summary(row: dict) -> AccountSummary:
+def _row_to_summary(row: dict[str, Any]) -> AccountSummary:
     last_sync_epoch = row.get("last_sync_at")
     last_sync_iso = (
         datetime.fromtimestamp(int(last_sync_epoch), tz=UTC) if last_sync_epoch else None
@@ -97,6 +97,7 @@ async def trigger_sync(
 ) -> dict[str, object]:
     if kind not in {"initial", "incremental"}:
         raise HTTPException(400, "kind invalide")
+    sync_kind = cast(Literal["initial", "incremental"], kind)
     with get_conn() as conn:
         row = conn.execute(
             "SELECT id FROM accounts WHERE id = ? AND is_active = 1", (account_id,)
@@ -104,8 +105,8 @@ async def trigger_sync(
     if not row:
         raise HTTPException(404, "compte introuvable")
     if bg:
-        bg.add_task(sync_account, account_id, kind)
-    return {"status": "started", "account_id": account_id, "kind": kind}
+        bg.add_task(sync_account, account_id, sync_kind)
+    return {"status": "started", "account_id": account_id, "kind": sync_kind}
 
 
 @router.delete("/{account_id}", summary="Deconnecter un compte")

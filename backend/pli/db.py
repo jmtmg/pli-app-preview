@@ -15,6 +15,7 @@ import sqlite3
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -33,9 +34,9 @@ def _connect_sqlite(db_path: Path, key: str | None = None) -> sqlite3.Connection
     conn: sqlite3.Connection
     if key:
         try:
-            from pysqlcipher3 import dbapi2 as sqlcipher  # type: ignore[import-untyped]
+            from pysqlcipher3 import dbapi2 as sqlcipher
 
-            conn = sqlcipher.connect(str(db_path))  # type: ignore[assignment]
+            conn = sqlcipher.connect(str(db_path))
             conn.execute(f"PRAGMA key = '{key}'")
         except ImportError:
             log.warning("sqlcipher_not_available_falling_back_plain_sqlite")
@@ -87,7 +88,7 @@ def get_conn() -> Iterator[sqlite3.Connection]:
 # PostgreSQL (mode cloud) — pool asyncpg
 # ---------------------------------------------------------------------------
 
-_pg_pool = None  # type: ignore[var-annotated]
+_pg_pool: Any | None = None
 
 
 async def init_db_cloud() -> None:
@@ -115,7 +116,7 @@ async def close_db_cloud() -> None:
 
 
 @asynccontextmanager
-async def get_pg_conn(tenant_id: str | None = None) -> AsyncIterator:
+async def get_pg_conn(tenant_id: str | None = None) -> AsyncIterator[Any]:
     """Connexion PG. Si `tenant_id` fourni, active la variable de session
     `pli.current_tenant` exploitée par les policies RLS."""
     if _pg_pool is None:

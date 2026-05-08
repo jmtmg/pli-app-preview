@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("", summary="Recherche globale (FTS5)")
-def search(q: str = Query(..., min_length=2, max_length=200)) -> dict[str, list[dict]]:
+def search(q: str = Query(..., min_length=2, max_length=200)) -> dict[str, list[dict[str, object]]]:
     """Retourne {contacts, messages, attachments}.
 
     Le tokenizer FTS5 utilise `unicode61 remove_diacritics 2` pour ignorer accents.

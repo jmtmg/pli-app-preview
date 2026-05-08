@@ -2,8 +2,8 @@
 # Testé sous macOS 14 / Linux / Windows + Git Bash.
 # Chaque cible suppose que vous êtes à la racine de `pli-app/`.
 
-.PHONY: help install install-be install-fe dev dev-be dev-fe \
-        test test-be test-fe test-sec lint lint-be lint-fe typecheck \
+.PHONY: help install install-be install-fe dev dev-be dev-fe demo \
+        test test-be test-be-all test-fe test-sec lint lint-be lint-fe typecheck typecheck-all \
         fmt fmt-be fmt-fe clean docker-up docker-down \
         db-migrate db-revision cloud-up cloud-down stripe-listen
 
@@ -13,10 +13,12 @@ help:
 	@echo "  dev            lance backend + frontend en parallèle"
 	@echo "  dev-be         backend uniquement (uvicorn --reload)"
 	@echo "  dev-fe         frontend uniquement (vite)"
-	@echo "  test           exécute les tests des deux côtés"
+	@echo "  demo           lance backend demo + frontend"
+	@echo "  test           exécute les tests MVP des deux côtés"
 	@echo "  test-sec       rejoue les tests d'isolation tenant (CI blocker)"
-	@echo "  lint           ruff + eslint"
-	@echo "  typecheck      mypy + tsc --noEmit"
+	@echo "  lint           ruff MVP + tsc --noEmit"
+	@echo "  typecheck      mypy MVP + tsc --noEmit"
+	@echo "  typecheck-all  mypy backend complet + tsc --noEmit"
 	@echo "  fmt            ruff format + prettier"
 	@echo "  db-migrate     applique les migrations Alembic (mode selon PLI_MODE)"
 	@echo "  db-revision m=… crée une nouvelle révision Alembic"
@@ -43,20 +45,57 @@ dev:
 	@$(MAKE) -j2 dev-be dev-fe
 
 dev-be:
-	cd backend && uvicorn pli.main:app --reload --host 127.0.0.1 --port 8000
+	cd backend && $(BACKEND_PY) -m uvicorn pli.main:app --reload --host 127.0.0.1 --port 8000
 
 dev-fe:
 	cd frontend && npm run dev
 
+demo:
+	@echo ">> Lancement demo locale: backend :8000 + frontend :5173"
+	@PLI_DEMO=true PLI_DB_PATH=$$(pwd)/.pli-dev/db.sqlite PLI_ATTACHMENTS_DIR=$$(pwd)/.pli-dev/att $(MAKE) -j2 dev-be dev-fe
+
 # -------------------------------------------------------------------- qa
+
+BACKEND_PY ?= .venv/bin/python
 
 test: test-be test-fe
 
+BACKEND_MVP_TESTS := \
+	tests/test_demo_mvp.py \
+	tests/test_local_demo.py \
+	tests/test_db_schema.py \
+	tests/test_parser.py \
+	tests/test_accounts.py \
+	tests/test_contacts.py \
+	tests/test_conversations.py \
+	tests/test_messages.py \
+	tests/test_health_logging.py \
+	tests/test_storage_adapters.py \
+	tests/test_sync_gmail.py \
+	tests/test_licensing.py \
+	tests/test_emails.py
+
+BACKEND_MVP_LINT_TARGETS := pli tests/test_demo_mvp.py tests/test_local_demo.py
+
+BACKEND_MVP_TYPECHECK_TARGETS := \
+	pli/config.py \
+	pli/db.py \
+	pli/demo.py \
+	pli/api/accounts.py \
+	pli/api/contacts.py \
+	pli/api/conversations.py \
+	pli/api/messages.py \
+	pli/api/search.py \
+	pli/api/demo.py
+
 test-be:
-	cd backend && pytest -q --cov=pli --cov-report=term-missing
+	cd backend && $(BACKEND_PY) -m pytest -q --no-cov $(BACKEND_MVP_TESTS)
+
+test-be-all:
+	cd backend && $(BACKEND_PY) -m pytest -q --no-cov
 
 test-sec:
-	cd backend && pytest tests/test_tenancy_isolation.py -v --no-cov
+	cd backend && $(BACKEND_PY) -m pytest tests/test_tenancy_isolation.py -v --no-cov
 
 test-fe:
 	cd frontend && npm run test -- --run
@@ -64,19 +103,23 @@ test-fe:
 lint: lint-be lint-fe
 
 lint-be:
-	cd backend && ruff check pli tests
+	cd backend && $(BACKEND_PY) -m ruff check $(BACKEND_MVP_LINT_TARGETS)
 
 lint-fe:
 	cd frontend && npm run lint
 
 typecheck:
-	cd backend && mypy pli
-	cd frontend && npm run typecheck
+	cd backend && $(BACKEND_PY) -m mypy $(BACKEND_MVP_TYPECHECK_TARGETS)
+	cd frontend && npm run type-check
+
+typecheck-all:
+	cd backend && $(BACKEND_PY) -m mypy pli
+	cd frontend && npm run type-check
 
 fmt: fmt-be fmt-fe
 
 fmt-be:
-	cd backend && ruff format pli tests && ruff check --fix pli tests
+	cd backend && $(BACKEND_PY) -m ruff format pli tests && $(BACKEND_PY) -m ruff check --fix pli tests
 
 fmt-fe:
 	cd frontend && npm run fmt

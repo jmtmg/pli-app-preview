@@ -13,6 +13,7 @@ dependencies = [
   "uvicorn[standard]>=0.32.0",
   "pydantic>=2.9.0",
   "pydantic-settings>=2.5.0",
+  "email-validator>=2.2.0",
   "httpx>=0.27.0",
   "python-multipart>=0.0.12",
 
@@ -24,7 +25,6 @@ dependencies = [
   # DB
   "sqlalchemy>=2.0.35",
   "alembic>=1.13.0",
-  "pysqlcipher3>=1.2.0; platform_system != 'Windows'",
 
   # Mail parsing
   "mail-parser>=3.15.0",
@@ -57,6 +57,12 @@ m2 = [
   "jinja2>=3.1.4",
   "python-ulid>=3.0.0",
   "tomli_w>=1.0.0",
+]
+
+# SQLCipher support is optional in dev: local mode falls back to stdlib sqlite3
+# when PLI_SQLCIPHER_KEY is unset or pysqlcipher3 is unavailable.
+sqlcipher = [
+  "pysqlcipher3>=1.2.0; platform_system != 'Windows'",
 ]
 
 dev = [

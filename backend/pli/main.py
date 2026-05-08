@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
-from .api import accounts, auth, contacts, conversations, messages, search
+from .api import accounts, auth, contacts, conversations, demo, messages, search
 from .config import settings
 from .db import get_conn, healthcheck, init_db
 from .logging_config import RequestLoggingMiddleware, configure_logging
@@ -31,6 +31,11 @@ log = structlog.get_logger()
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     log.info("pli_starting", version=__version__, mode=settings.mode)
     init_db()
+    if settings.mode == "local" and settings.demo:
+        from .demo import seed_demo_data
+
+        demo_counts = seed_demo_data()
+        log.info("pli_demo_seeded", **demo_counts)
     yield
     log.info("pli_stopping")
 
@@ -102,6 +107,7 @@ app.include_router(conversations.router, prefix="/conversations", tags=["convers
 app.include_router(messages.router, prefix="/messages", tags=["messages"])
 app.include_router(contacts.router, prefix="/contacts", tags=["contacts"])
 app.include_router(search.router, prefix="/search", tags=["search"])
+app.include_router(demo.router, prefix="/demo", tags=["demo-local"])
 
 
 # --- Routers M2 (kill-switch PLI_ENABLE_M2, cf. ADR 0007) ---

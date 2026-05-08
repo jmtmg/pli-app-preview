@@ -96,6 +96,10 @@ class Settings(BaseSettings):
     # PLI_ENABLE_M2=1|true|yes -> monte billing/auth_pli/licensing/tenancy
     enable_m2: bool = False
 
+    # Developer/demo mode: seed a deterministic local mailbox so PLI can be
+    # opened and exercised without real Gmail/Microsoft OAuth credentials.
+    demo: bool = False
+
     def ensure_dirs(self) -> None:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.attachments_dir.mkdir(parents=True, exist_ok=True)

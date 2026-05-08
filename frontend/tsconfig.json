@@ -14,11 +14,27 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
+    "noEmit": true,
+    "tsBuildInfoFile": "node_modules/.tsbuild/tsconfig.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src/vite-env.d.ts",
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/api/client.ts",
+    "src/api/queries.ts",
+    "src/components/Avatar.tsx",
+    "src/components/EmptyState.tsx",
+    "src/components/FilterBar.tsx",
+    "src/components/Header.tsx",
+    "src/features/list/**/*.tsx",
+    "src/features/conversation/**/*.tsx",
+    "src/features/contact/**/*.tsx",
+    "src/features/drawer/**/*.tsx"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

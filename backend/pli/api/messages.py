@@ -9,17 +9,25 @@ GET  /messages/by-contact/{contact_id}
 POST /messages/{id}/read
     Bascule le flag is_read + decrement du compteur contacts.unread_count.
 
-POST /messages/send, /messages/drafts
-    Sprint 3 — stubs 501.
+POST /messages/send
+    En mode local uniquement, persiste un message sortant fictif sans provider.
+    Hors local, le vrai send provider reste un stub 501.
+
+POST /messages/drafts
+    Sprint 3 — stub 501.
 """
 
 from __future__ import annotations
 
-from typing import Literal
+import json
+import time
+import uuid
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
+from ..config import settings
 from ..db import get_conn
 from ..models import Draft
 
@@ -47,7 +55,7 @@ class MessageItem(BaseModel):
     is_read: bool = False
 
 
-def _row_to_message(row: dict) -> MessageItem:
+def _row_to_message(row: dict[str, Any]) -> MessageItem:
     # Priorite au `snippet` provider ; sinon fallback body_text tronque.
     snippet = row.get("snippet")
     if not snippet:
@@ -124,6 +132,19 @@ def mark_read(message_id: str, read: bool = True) -> dict[str, object]:
     return {"ok": True, "message_id": message_id, "is_read": target, "changed": True}
 
 
+class SendMessageInput(BaseModel):
+    """Payload minimal used by the MVP composer.
+
+    In local/demo mode this creates a local outgoing message. Real provider send
+    remains a later provider-specific implementation.
+    """
+
+    contact_id: str
+    body: str
+    subject: str | None = None
+    account_id: str | None = None
+
+
 # -------- Drafts / send — Sprint 3 --------
 
 
@@ -133,7 +154,72 @@ def save_draft(draft: Draft) -> Draft:
     raise HTTPException(501, "Sprint 3 — to implement")
 
 
-@router.post("/send", summary="Envoyer un message")
-async def send_message(draft: Draft) -> dict[str, object]:
-    """Sprint 3 . BE+FE — envoie via provider puis persiste avec direction='out'."""
-    raise HTTPException(501, "Sprint 3 — to implement")
+@router.post("/send", response_model=MessageItem, summary="Envoyer un message")
+async def send_message(payload: SendMessageInput) -> MessageItem:
+    """Create an outgoing local message for the MVP composer.
+
+    This makes PLI functional locally without OAuth provider credentials. The
+    row is marked with a ``local-out-*`` provider id so it is easy to replace by
+    a real Gmail/Microsoft send adapter later.
+    """
+    if settings.mode != "local":
+        raise HTTPException(501, "envoi provider non implémenté hors mode local")
+    body = payload.body.strip()
+    if not body:
+        raise HTTPException(422, "body vide")
+    now = int(time.time())
+    message_id = f"local-out-{uuid.uuid4().hex}"
+    with get_conn() as conn:
+        contact = conn.execute(
+            """
+            SELECT c.id, c.account_id, c.email, c.display_name, a.email AS account_email
+            FROM contacts c
+            JOIN accounts a ON a.id = c.account_id
+            WHERE c.id = ?
+            """,
+            (payload.contact_id,),
+        ).fetchone()
+        if not contact:
+            raise HTTPException(404, "contact introuvable")
+        account_id = payload.account_id or contact["account_id"]
+        if account_id != contact["account_id"]:
+            raise HTTPException(400, "account_id ne correspond pas au contact")
+        conn.execute(
+            """
+            INSERT INTO messages(
+                id, account_id, contact_id, provider_id, thread_id, direction,
+                subject, snippet, body_text, body_html, from_email, from_name,
+                to_emails, cc_emails, received_at, is_read, is_starred,
+                has_attachments, raw_headers, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'out', ?, ?, ?, NULL, ?, ?, ?, '[]', ?, 1, 0, 0, '', ?)
+            """,
+            (
+                message_id,
+                account_id,
+                payload.contact_id,
+                message_id,
+                f"local-thread-{payload.contact_id}",
+                payload.subject,
+                body[:240],
+                body,
+                contact["account_email"],
+                "PLI local",
+                json.dumps([contact["email"]]),
+                now,
+                now,
+            ),
+        )
+        conn.execute(
+            "UPDATE contacts SET last_msg_at = ? WHERE id = ?",
+            (now, payload.contact_id),
+        )
+        conn.commit()
+        row = conn.execute(
+            """
+            SELECT id, contact_id, direction, subject, snippet, body_text,
+                   received_at, has_attachments, is_read
+            FROM messages WHERE id = ?
+            """,
+            (message_id,),
+        ).fetchone()
+    return _row_to_message(dict(row))
