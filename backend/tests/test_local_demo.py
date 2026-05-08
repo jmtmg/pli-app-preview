@@ -10,7 +10,7 @@ def test_local_demo_reset_seeds_backend_read_slice(client) -> None:  # type: ign
     payload = r.json()
     assert payload["mode"] == "local"
     assert payload["seeded"] is True
-    assert payload["counts"] == {"accounts": 1, "contacts": 3, "messages": 4, "attachments": 1}
+    assert payload["counts"] == {"accounts": 1, "contacts": 4, "messages": 5, "attachments": 1}
     assert "token" not in r.text.lower()
     assert "secret" not in r.text.lower()
 
@@ -21,7 +21,12 @@ def test_local_demo_reset_seeds_backend_read_slice(client) -> None:  # type: ign
     conversations = client.get("/conversations?filter=all").json()
     ids = [item["contact_id"] for item in conversations["items"]]
     assert ids[0] == "demo-contact-alice"
-    assert set(ids) == {"demo-contact-alice", "demo-contact-banque", "demo-contact-legal"}
+    assert set(ids) == {
+        "demo-contact-alice",
+        "demo-contact-banque",
+        "demo-contact-legal",
+        "demo-contact-test",
+    }
     assert conversations["items"][0]["is_pinned"] is True
     assert "frontend" in conversations["items"][0]["last_preview"]
 
@@ -41,6 +46,9 @@ def test_local_demo_reset_seeds_backend_read_slice(client) -> None:  # type: ign
     assert any(result["id"] == "demo-msg-001" for result in mvp_search["messages"])
     assert any(result["filename"] == "mvp-local-demo.pdf" for result in mvp_search["attachments"])
 
+    test_search = client.get("/search", params={"q": "test.pli"}).json()
+    assert any(result["email"] == "test.pli@demo-pli.com" for result in test_search["contacts"])
+
 
 def test_local_demo_reset_is_idempotent(client) -> None:  # type: ignore[no-untyped-def]
     first = client.post("/demo/reset")
@@ -48,7 +56,7 @@ def test_local_demo_reset_is_idempotent(client) -> None:  # type: ignore[no-unty
     assert first.status_code == 200
     assert second.status_code == 200
     assert first.json()["counts"] == second.json()["counts"]
-    assert len(client.get("/conversations?filter=all").json()["items"]) == 3
+    assert len(client.get("/conversations?filter=all").json()["items"]) == 4
 
 
 def test_local_demo_reset_rejects_cloud_mode(client, monkeypatch) -> None:  # type: ignore[no-untyped-def]

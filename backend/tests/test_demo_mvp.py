@@ -5,8 +5,8 @@ def test_demo_seed_exposes_functional_mailbox(client):
     seeded = client.post("/demo/seed?reset=true")
     assert seeded.status_code == 200, seeded.text
     assert seeded.json()["accounts"] == 1
-    assert seeded.json()["contacts"] == 3
-    assert seeded.json()["messages"] == 4
+    assert seeded.json()["contacts"] == 4
+    assert seeded.json()["messages"] == 5
 
     accounts = client.get("/accounts")
     assert accounts.status_code == 200, accounts.text
@@ -15,8 +15,9 @@ def test_demo_seed_exposes_functional_mailbox(client):
     conversations = client.get("/conversations?filter=all")
     assert conversations.status_code == 200, conversations.text
     body = conversations.json()
-    assert len(body["items"]) == 3
+    assert len(body["items"]) == 4
     assert body["items"][0]["contact_id"] == "demo-contact-alice"
+    assert any(item["email"] == "test.pli@demo-pli.com" for item in body["items"])
 
 
 def test_local_composer_creates_outgoing_message(client):

@@ -7,6 +7,8 @@ Sprint 4 · BE — owner : BE
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Query
 
 from ..db import get_conn
@@ -21,7 +23,7 @@ def search(q: str = Query(..., min_length=2, max_length=200)) -> dict[str, list[
     Le tokenizer FTS5 utilise `unicode61 remove_diacritics 2` pour ignorer accents.
     On préfixe `q*` pour recherche par préfixe.
     """
-    q_fts = " ".join(f"{tok}*" for tok in q.split() if tok)
+    q_fts = " ".join(f"{tok}*" for tok in re.findall(r"[\w@-]+", q) if tok)
 
     with get_conn() as conn:
         # Contacts — LIKE simple (les contacts ne sont pas dans FTS5 en M1)

@@ -15,6 +15,7 @@ Ce qui est terminé et vérifié :
 - backend FastAPI local/démo démarre ;
 - seed démo déterministe OK ;
 - comptes, conversations, messages, recherche/contact/attachments de démo OK ;
+- adresse de test locale créée et seedée : `test.pli@demo-pli.com` ;
 - composer local `POST /messages/send` OK ;
 - frontend React/Vite MVP buildable et servable ;
 - tests/lint/typecheck MVP verts ;
@@ -68,9 +69,9 @@ backend/.venv/bin/python -m uvicorn pli.main:app --host 127.0.0.1 --port 18080
 Endpoints validés :
 
 - `GET /health` → HTTP 200, `status: ok`, `mode: local`, `accounts: 1` ;
-- `POST /demo/seed?reset=true` → HTTP 200, `accounts: 1`, `contacts: 3`, `messages: 4`, `attachments: 1` ;
+- `POST /demo/seed?reset=true` → HTTP 200, `accounts: 1`, `contacts: 4`, `messages: 5`, `attachments: 1` ;
 - `GET /accounts` → HTTP 200, 1 compte `demo-account-gmail` ;
-- `GET /conversations?filter=all` → HTTP 200, 3 conversations ;
+- `GET /conversations?filter=all` → HTTP 200, 4 conversations, dont `test.pli@demo-pli.com` ;
 - `GET /messages/by-contact/demo-contact-alice` → HTTP 200, 2 messages seedés ;
 - `POST /messages/send` → HTTP 200, message sortant local `local-out-*` créé.
 

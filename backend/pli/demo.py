@@ -47,6 +47,15 @@ CONTACTS: tuple[DemoContact, ...] = (
         kind="notif",
     ),
     DemoContact(
+        id="demo-contact-test",
+        email="test.pli@demo-pli.com",
+        display_name="Adresse test PLI",
+        company="PLI Demo",
+        role="Boîte de test locale",
+        is_pinned=1,
+        pinned_order=2,
+    ),
+    DemoContact(
         id="demo-contact-legal",
         email="maitre.durand@cabinet-durand.fr",
         display_name="Me Durand",
@@ -148,6 +157,17 @@ def seed_demo_data(reset: bool = False) -> dict[str, int | bool]:
                 "notifications@demo-bank.com",
                 "Banque — notifications",
                 now - 3600,
+                0,
+            ),
+            (
+                "demo-msg-005",
+                "demo-contact-test",
+                "in",
+                "Adresse de test PLI",
+                "Cette adresse de test locale sert à valider les conversations et le composer sans vrai compte email.",
+                "test.pli@demo-pli.com",
+                "Adresse test PLI",
+                now - 2400,
                 0,
             ),
             (
