@@ -1,0 +1,34 @@
+{
+  "list": {
+    "all": "All",
+    "humans": "Humans",
+    "notifs": "Notifs",
+    "unread": "Unread",
+    "with_attachment": "Has attachment",
+    "pinned": "Pinned",
+    "empty": "No conversations in this filter."
+  },
+  "card": {
+    "unread_marker": "unread",
+    "attachments_count_one": "{{count}} attachment",
+    "attachments_count_other": "{{count}} attachments"
+  },
+  "view": {
+    "back": "Back",
+    "participants": "Participants",
+    "subject": "Subject",
+    "messages_count_one": "{{count}} message",
+    "messages_count_other": "{{count}} messages",
+    "no_messages": "No messages in this conversation.",
+    "mark_unread": "Mark as unread",
+    "archive": "Archive",
+    "mute": "Mute",
+    "pin": "Pin",
+    "unpin": "Unpin"
+  },
+  "actions": {
+    "undo": "Undo",
+    "confirm_archive": "Conversation archived",
+    "confirm_mute": "Conversation muted"
+  }
+}

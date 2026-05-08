@@ -1,0 +1,78 @@
+{
+  "tour": {
+    "skip": "Skip",
+    "next": "Next",
+    "finish": "Let's go",
+    "list": {
+      "title": "Your conversations, grouped by contact",
+      "body": "One entry = one person. See every message from them, across all accounts."
+    },
+    "filters": {
+      "title": "Humans or noise?",
+      "body": "One tap filters out real conversations from newsletters and automated notifications."
+    },
+    "swipe": {
+      "title": "Swipe to act",
+      "body": "Swipe right to archive, left to mark unread. Two thresholds based on distance."
+    },
+    "composer": {
+      "title": "Write, send",
+      "body": "The composer expands as you type. Drafts auto-save every 2 s."
+    },
+    "search": {
+      "title": "Search anywhere, fast",
+      "body": "Full-text search across all accounts. Under 300 ms on 10,000 messages."
+    }
+  },
+  "nps": {
+    "title": "How likely are you to recommend PLI?",
+    "subtitle": "0 = not at all · 10 = extremely",
+    "close": "Close",
+    "thanks": "Thanks! Your feedback matters.",
+    "comment_placeholder": "One word? (optional)",
+    "send": "Send",
+    "send_anonymous": "Send anonymously",
+    "prompt": {
+      "detractor": "What's keeping you from recommending us today?",
+      "passive": "What would make it a 10?",
+      "promoter": "What do you love most?"
+    }
+  },
+  "feedback": {
+    "fab": { "open": "Open feedback form" },
+    "title": "Anything to flag?",
+    "placeholder": "Tell us what you saw, or what you wish you'd seen…",
+    "kind": {
+      "bug": "Bug",
+      "suggestion": "Suggestion",
+      "other": "Other"
+    },
+    "send": "Send",
+    "thanks": "Got it, thanks. We'll reply within 24 h."
+  },
+  "waitlist": {
+    "title": "Join the private beta",
+    "subtitle": "100 spots. Batched invites. Free during beta.",
+    "email_placeholder": "your@email.com",
+    "first_name_placeholder": "First name (optional)",
+    "motivation_placeholder": "Why PLI? What do you run? (optional, 280 chars max)",
+    "privacy": "Your email is only used to send you an invite code and PLI news. One-click unsubscribe.",
+    "submit": "Add me to the list",
+    "sending": "Sending…",
+    "sent": "Check your inbox — we sent you a confirmation link.",
+    "error_generic": "Something went wrong. Try again in a few minutes."
+  },
+  "invited": {
+    "title": "You're invited",
+    "subtitle": "Confirm your code: {{code}}",
+    "redeem": "Activate my beta account",
+    "redeeming": "Activating…",
+    "ok": "Activated! Redirecting to PLI…",
+    "missing_code": "No code found. Check the link in your email.",
+    "back_to_waitlist": "Back to waitlist",
+    "error_generic": "Could not redeem this code."
+  },
+  "common": {
+    "cancel": "Cancel"
+  }
+}

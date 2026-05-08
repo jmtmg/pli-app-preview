@@ -1,0 +1,12 @@
+Bonjour,
+
+Votre essai gratuit PLI Plus se termine dans {{ days_left }} jour(s).
+
+Pour continuer à profiter de la recherche plein texte illimitée, de la synchro multi-comptes et des workflows avancés, activez votre abonnement :
+
+{{ billing_url }}
+
+Sans action de votre part, votre compte basculera automatiquement sur le plan gratuit. Vos données restent intactes — vous pourrez réactiver l'abonnement à tout moment.
+
+— L'équipe PLI
+{{ app_url }}

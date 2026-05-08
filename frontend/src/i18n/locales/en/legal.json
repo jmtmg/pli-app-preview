@@ -1,0 +1,25 @@
+{
+  "mentions": {
+    "title": "Legal notice",
+    "open": "Read the legal notice"
+  },
+  "cgu": {
+    "title": "Terms and conditions",
+    "open": "Read the terms"
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "open": "Read the privacy policy"
+  },
+  "subprocessors": {
+    "title": "Subprocessors",
+    "open": "See the list of subprocessors"
+  },
+  "cookie_banner": {
+    "title": "Cookies",
+    "body": "We only use strictly necessary cookies. Analytics cookies are optional and disabled by default.",
+    "accept_analytics": "Enable analytics",
+    "refuse_analytics": "Decline",
+    "manage": "Manage"
+  }
+}

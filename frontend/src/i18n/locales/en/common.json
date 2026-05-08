@@ -1,0 +1,35 @@
+{
+  "app": {
+    "name": "PLI",
+    "tagline": "Your mail, simplified."
+  },
+  "nav": {
+    "list": "Inbox",
+    "compose": "New",
+    "search": "Search",
+    "settings": "Settings",
+    "logout": "Sign out"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "loading": "Loading…",
+    "sending": "Sending…",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "footer": {
+    "legal": "Legal notice",
+    "cgu": "Terms",
+    "privacy": "Privacy",
+    "subprocessors": "Subprocessors",
+    "security": "Security",
+    "status": "Status",
+    "contact": "Contact"
+  }
+}

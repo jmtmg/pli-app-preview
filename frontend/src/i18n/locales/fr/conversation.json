@@ -1,0 +1,34 @@
+{
+  "list": {
+    "all": "Tous",
+    "humans": "Humains",
+    "notifs": "Notifs",
+    "unread": "Non lus",
+    "with_attachment": "Avec PJ",
+    "pinned": "Épinglés",
+    "empty": "Aucune conversation pour ce filtre."
+  },
+  "card": {
+    "unread_marker": "non lu",
+    "attachments_count_one": "{{count}} pièce jointe",
+    "attachments_count_other": "{{count}} pièces jointes"
+  },
+  "view": {
+    "back": "Retour",
+    "participants": "Participants",
+    "subject": "Sujet",
+    "messages_count_one": "{{count}} message",
+    "messages_count_other": "{{count}} messages",
+    "no_messages": "Aucun message dans cette conversation.",
+    "mark_unread": "Marquer comme non lu",
+    "archive": "Archiver",
+    "mute": "Mettre en sourdine",
+    "pin": "Épingler",
+    "unpin": "Désépingler"
+  },
+  "actions": {
+    "undo": "Annuler",
+    "confirm_archive": "Conversation archivée",
+    "confirm_mute": "Conversation mise en sourdine"
+  }
+}

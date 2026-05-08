@@ -1,0 +1,25 @@
+{
+  "new_message": "Nouveau message",
+  "reply": "Répondre",
+  "reply_all": "Répondre à tous",
+  "forward": "Transférer",
+  "to": "À",
+  "cc": "Cc",
+  "bcc": "Cci",
+  "subject": "Sujet",
+  "body_placeholder": "Écrivez votre message…",
+  "send": "Envoyer",
+  "sending": "Envoi en cours…",
+  "sent": "Envoyé",
+  "save_draft": "Enregistrer le brouillon",
+  "draft_saved": "Brouillon enregistré",
+  "attach": "Pièce jointe",
+  "attachment_too_large": "Fichier trop volumineux ({{size}}). Limite : {{limit}}.",
+  "signature": "Signature",
+  "from_account": "Depuis",
+  "errors": {
+    "send_failed": "Échec de l'envoi. Réessayez.",
+    "no_recipient": "Ajoutez au moins un destinataire.",
+    "no_subject_confirm": "Envoyer sans sujet ?"
+  }
+}

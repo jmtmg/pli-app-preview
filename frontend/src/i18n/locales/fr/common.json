@@ -1,0 +1,35 @@
+{
+  "app": {
+    "name": "PLI",
+    "tagline": "Votre mail, plus simple."
+  },
+  "nav": {
+    "list": "Liste",
+    "compose": "Nouveau",
+    "search": "Rechercher",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "loading": "Chargement…",
+    "sending": "Envoi…",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "footer": {
+    "legal": "Mentions légales",
+    "cgu": "CGU",
+    "privacy": "Confidentialité",
+    "subprocessors": "Sous-traitants",
+    "security": "Sécurité",
+    "status": "Statut",
+    "contact": "Contact"
+  }
+}

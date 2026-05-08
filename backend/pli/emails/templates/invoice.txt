@@ -1,0 +1,17 @@
+Bonjour,
+
+Merci pour votre confiance.
+
+Votre paiement de {{ amount }} ({{ plan }}) a été traité avec succès le {{ paid_at }}.
+
+Télécharger la facture (PDF) :
+{{ invoice_url }}
+
+Référence facture : {{ invoice_number }}
+Prochain prélèvement : {{ next_charge_at }}
+
+Retrouvez toutes vos factures dans Paramètres → Facturation :
+{{ billing_url }}
+
+— L'équipe PLI
+{{ app_url }}

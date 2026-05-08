@@ -1,0 +1,7 @@
+<h1>Votre facture PLI Plus</h1>
+<p>Bonjour,</p>
+<p>Merci pour votre confiance. Votre paiement de <strong>{{ amount }}</strong> ({{ plan }}) a été traité avec succès le {{ paid_at }}.</p>
+<p><a href="{{ invoice_url }}" class="btn">Télécharger la facture (PDF)</a></p>
+<p class="muted">Référence facture : <code>{{ invoice_number }}</code><br>
+Prochain prélèvement : {{ next_charge_at }}</p>
+<p>Retrouvez toutes vos factures dans <a href="{{ billing_url }}">Paramètres → Facturation</a>.</p>

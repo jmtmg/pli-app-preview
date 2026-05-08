@@ -1,0 +1,125 @@
+groups:
+  - name: pli-p1-blocking
+    interval: 30s
+    rules:
+      - alert: HTTP5xxRateHigh
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(http_requests_total[5m])) > 0.01
+        for: 5m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "5xx rate > 1% pendant 5 min"
+          runbook: "https://docs.pli.app/runbook/5xx"
+
+      - alert: HealthzDown
+        expr: probe_success{job="healthz"} < 1
+        for: 2m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "/healthz indisponible"
+          runbook: "https://docs.pli.app/runbook/healthz-down"
+
+      - alert: DBConnectionsSaturated
+        expr: pli_db_connections_in_use / pli_db_connections_max > 0.9
+        for: 3m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "Pool DB saturé > 90%"
+          runbook: "https://docs.pli.app/runbook/db-pool-saturation"
+
+      - alert: TLSCertExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
+        for: 10m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "Certificat TLS expire < 7 j"
+          runbook: "https://docs.pli.app/runbook/tls-renew"
+
+      - alert: StripeWebhookSignatureFailures
+        expr: increase(pli_stripe_webhook_invalid_signature_total[10m]) >= 3
+        for: 0m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "3 échecs de signature webhook Stripe en 10 min"
+          runbook: "https://docs.pli.app/runbook/stripe-webhook-failure"
+
+      - alert: SyncProviderDown
+        expr: rate(pli_sync_errors_total[10m]) > 0
+              and on(provider) (sum by (provider) (rate(pli_sync_success_total[10m])) == 0)
+        for: 10m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "Provider {{ $labels.provider }} : 100% échec sync 10 min"
+          runbook: "https://docs.pli.app/runbook/sync-down"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "Disque / < 10% sur {{ $labels.instance }}"
+
+      - alert: BackupFailed
+        expr: increase(pli_backup_db_failed_total[24h]) >= 2
+        for: 0m
+        labels: { severity: P1, team: pli-oncall }
+        annotations:
+          summary: "2 échecs consécutifs backup DB"
+          runbook: "https://docs.pli.app/runbook/backup-failure"
+
+  - name: pli-p2-degradation
+    interval: 30s
+    rules:
+      - alert: P95ConversationsSlow
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{route="/conversations"}[5m]))
+          ) > 0.8
+        for: 10m
+        labels: { severity: P2 }
+        annotations:
+          summary: "p95 /conversations > 800 ms (cible 400 ms)"
+
+      - alert: P95SearchSlow
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{route="/search"}[5m]))
+          ) > 0.6
+        for: 10m
+        labels: { severity: P2 }
+        annotations:
+          summary: "p95 /search > 600 ms (cible 300 ms)"
+
+      - alert: Error4xxRateAbnormal
+        expr: |
+          sum(rate(http_requests_total{status=~"4..",status!="401"}[15m]))
+          / sum(rate(http_requests_total[15m])) > 0.1
+        for: 15m
+        labels: { severity: P2 }
+        annotations:
+          summary: "Taux 4xx (hors 401) > 10% sur 15 min"
+
+      - alert: SyncQueueBacklog
+        expr: pli_sync_queue_length > 100
+        for: 15m
+        labels: { severity: P2 }
+        annotations:
+          summary: "File sync en retard > 100 items sur 15 min"
+
+      - alert: EmailDelayHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(pli_email_delivery_seconds_bucket[5m]))) > 300
+        for: 5m
+        labels: { severity: P2 }
+        annotations:
+          summary: "Emails transactionnels : p95 > 5 min"
+
+  - name: pli-p3-anomaly
+    interval: 5m
+    rules:
+      - alert: NPSBelowTarget
+        expr: pli_nps_rolling_7d < 30
+        for: 24h
+        labels: { severity: P3 }
+        annotations:
+          summary: "NPS roulant 7 j < 30 pendant 24 h (cible 40)"

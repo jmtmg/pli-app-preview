@@ -1,0 +1,78 @@
+{
+  "tour": {
+    "skip": "Passer",
+    "next": "Suivant",
+    "finish": "C'est parti",
+    "list": {
+      "title": "Tes conversations, regroupées par contact",
+      "body": "Une entrée = une personne. Tu vois tous ses messages à un endroit, tous comptes confondus."
+    },
+    "filters": {
+      "title": "Humains ou notifs ?",
+      "body": "Filtre d'un geste les vraies conversations des newsletters et notifications automatiques."
+    },
+    "swipe": {
+      "title": "Glisse pour agir",
+      "body": "Swipe à droite pour archiver, à gauche pour marquer non lu. Deux seuils selon la distance."
+    },
+    "composer": {
+      "title": "Écris, envoie",
+      "body": "Le composer s'étend à mesure que tu tapes. Brouillon auto sauvegardé toutes les 2 s."
+    },
+    "search": {
+      "title": "Cherche partout, vite",
+      "body": "Recherche plein-texte sur tous tes comptes. Moins de 300 ms sur 10 000 messages."
+    }
+  },
+  "nps": {
+    "title": "Quel est la probabilité que tu recommandes PLI ?",
+    "subtitle": "0 = très peu probable · 10 = très probable",
+    "close": "Fermer",
+    "thanks": "Merci ! Ton retour nous est précieux.",
+    "comment_placeholder": "Un mot ? (facultatif)",
+    "send": "Envoyer",
+    "send_anonymous": "Envoyer anonymement",
+    "prompt": {
+      "detractor": "Qu'est-ce qui t'empêche de nous recommander aujourd'hui ?",
+      "passive": "Qu'est-ce qui te ferait passer à 10 ?",
+      "promoter": "Qu'est-ce qui te plaît le plus ?"
+    }
+  },
+  "feedback": {
+    "fab": { "open": "Ouvrir le formulaire de feedback" },
+    "title": "Tu veux nous signaler quelque chose ?",
+    "placeholder": "Décris-nous ce que tu vois, ou ce que tu aurais aimé voir…",
+    "kind": {
+      "bug": "Bug",
+      "suggestion": "Suggestion",
+      "other": "Autre"
+    },
+    "send": "Envoyer",
+    "thanks": "Reçu, merci. Réponse sous 24 h."
+  },
+  "waitlist": {
+    "title": "Rejoins la beta privée",
+    "subtitle": "100 places. Invitations par batches. Gratuit pendant la beta.",
+    "email_placeholder": "ton@email.com",
+    "first_name_placeholder": "Prénom (facultatif)",
+    "motivation_placeholder": "Pourquoi PLI ? Quelle boîte tu gères ? (facultatif, 280 caractères max)",
+    "privacy": "Ton email sert uniquement à t'envoyer un code d'invitation et les news PLI. Désinscription en 1 clic.",
+    "submit": "Me mettre sur la liste",
+    "sending": "Envoi…",
+    "sent": "Vérifie ta boîte mail — on t'a envoyé un lien de confirmation.",
+    "error_generic": "Une erreur s'est produite. Réessaye dans quelques minutes."
+  },
+  "invited": {
+    "title": "Tu es invité·e",
+    "subtitle": "Confirme ton code : {{code}}",
+    "redeem": "Activer mon compte beta",
+    "redeeming": "Activation…",
+    "ok": "Activé ! On te redirige vers PLI…",
+    "missing_code": "Aucun code fourni. Vérifie le lien dans ton email.",
+    "back_to_waitlist": "Retour à la waitlist",
+    "error_generic": "Impossible d'activer ce code."
+  },
+  "common": {
+    "cancel": "Annuler"
+  }
+}

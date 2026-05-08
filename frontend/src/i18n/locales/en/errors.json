@@ -1,0 +1,17 @@
+{
+  "generic": "Something went wrong. Our team has been notified.",
+  "network": "Couldn't reach the server. Please check your connection.",
+  "auth": {
+    "invalid_credentials": "Wrong email or password.",
+    "account_locked": "Too many attempts. Please try again in a few minutes.",
+    "session_expired": "Your session has expired. Please sign in again.",
+    "email_taken": "An account already exists with this email.",
+    "weak_password": "Password too weak. Please choose a stronger one."
+  },
+  "sync": {
+    "oauth_expired": "Your {{provider}} connection has expired. Please reconnect it.",
+    "quota_reached": "{{provider}} quota reached. Retrying in a few minutes."
+  },
+  "not_found": "This resource doesn't exist or you don't have access to it.",
+  "forbidden": "Access denied."
+}

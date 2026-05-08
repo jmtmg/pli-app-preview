@@ -1,0 +1,17 @@
+{
+  "generic": "Une erreur inattendue est survenue. Nos équipes ont été notifiées.",
+  "network": "Impossible de joindre le serveur. Vérifiez votre connexion.",
+  "auth": {
+    "invalid_credentials": "Email ou mot de passe incorrect.",
+    "account_locked": "Trop de tentatives. Réessayez dans quelques minutes.",
+    "session_expired": "Votre session a expiré. Connectez-vous à nouveau.",
+    "email_taken": "Un compte existe déjà avec cet email.",
+    "weak_password": "Mot de passe trop faible. Choisissez-en un plus solide."
+  },
+  "sync": {
+    "oauth_expired": "La connexion à votre compte {{provider}} a expiré. Reconnectez-le.",
+    "quota_reached": "Quota atteint côté {{provider}}. Nouvelle tentative dans quelques minutes."
+  },
+  "not_found": "Cette ressource n'existe pas ou vous n'y avez pas accès.",
+  "forbidden": "Accès refusé."
+}

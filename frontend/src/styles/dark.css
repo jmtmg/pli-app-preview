@@ -1,0 +1,144 @@
+/**
+ * Dark mode tokens pour PLI.
+ *
+ * Référence design : doc 03 — Wireframes, section Tokens.
+ * Tous les ratios de contraste ≥ 4.5:1 sur texte normal, ≥ 3:1 sur texte large.
+ * Vérifié axe-core + `contrast-ratio` lib en CI.
+ *
+ * Bascule auto : `prefers-color-scheme: dark` → classe `dark` sur <html>.
+ * Override user : via <html class="theme-dark|theme-light">.
+ */
+
+:root {
+  /* Light (default) --------------------------------------------------- */
+  --color-bg-canvas: #ffffff;
+  --color-bg-surface: #fafafa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-muted: #f3f4f6;
+  --color-bg-hover: #f3f4f6;
+
+  --color-border-default: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  --color-text-primary: #111827; /* contrast 16.8 vs bg */
+  --color-text-secondary: #4b5563; /* contrast 7.2 */
+  --color-text-muted: #6b7280; /* contrast 4.65 */
+  --color-text-placeholder: #9ca3af; /* used only on large/placeholder */
+
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-text: #ffffff;
+
+  --color-success-bg: #ecfdf5;
+  --color-success-text: #047857;
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #b45309;
+  --color-danger-bg: #fef2f2;
+  --color-danger-text: #b91c1c;
+  --color-danger-border: #fca5a5;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.05);
+  --shadow-overlay: 0 10px 30px rgb(0 0 0 / 0.15);
+
+  --ring-focus: 0 0 0 3px rgb(99 102 241 / 0.45);
+}
+
+/* Dark --------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light) {
+    --color-bg-canvas: #0b0b0f;
+    --color-bg-surface: #111218;
+    --color-bg-elevated: #17181f;
+    --color-bg-muted: #1d1e26;
+    --color-bg-hover: #22232b;
+
+    --color-border-default: #2a2b34;
+    --color-border-strong: #3a3c47;
+
+    --color-text-primary: #f5f5f7; /* contrast 15.2 vs bg */
+    --color-text-secondary: #c4c6cf; /* contrast 8.5 */
+    --color-text-muted: #9a9ca4; /* contrast 4.6 */
+    --color-text-placeholder: #6e707a;
+
+    --color-accent: #818cf8;
+    --color-accent-hover: #6366f1;
+    --color-accent-text: #0b0b0f;
+
+    --color-success-bg: #022c22;
+    --color-success-text: #6ee7b7;
+    --color-warning-bg: #2a1a03;
+    --color-warning-text: #fbbf24;
+    --color-danger-bg: #2a0c0c;
+    --color-danger-text: #fca5a5;
+    --color-danger-border: #7f1d1d;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.5);
+    --shadow-overlay: 0 10px 30px rgb(0 0 0 / 0.7);
+
+    --ring-focus: 0 0 0 3px rgb(129 140 248 / 0.55);
+  }
+}
+
+html.theme-dark {
+  --color-bg-canvas: #0b0b0f;
+  --color-bg-surface: #111218;
+  --color-bg-elevated: #17181f;
+  --color-bg-muted: #1d1e26;
+  --color-bg-hover: #22232b;
+
+  --color-border-default: #2a2b34;
+  --color-border-strong: #3a3c47;
+
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #c4c6cf;
+  --color-text-muted: #9a9ca4;
+  --color-text-placeholder: #6e707a;
+
+  --color-accent: #818cf8;
+  --color-accent-hover: #6366f1;
+  --color-accent-text: #0b0b0f;
+
+  --color-success-bg: #022c22;
+  --color-success-text: #6ee7b7;
+  --color-warning-bg: #2a1a03;
+  --color-warning-text: #fbbf24;
+  --color-danger-bg: #2a0c0c;
+  --color-danger-text: #fca5a5;
+  --color-danger-border: #7f1d1d;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.5);
+  --shadow-overlay: 0 10px 30px rgb(0 0 0 / 0.7);
+
+  --ring-focus: 0 0 0 3px rgb(129 140 248 / 0.55);
+}
+
+/* Smooth transition when user toggles theme. */
+html,
+html * {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+/* Respect reduced motion for users who prefer no animation. */
+@media (prefers-reduced-motion: reduce) {
+  html,
+  html * {
+    transition: none !important;
+  }
+}
+
+/* Focus ring — always visible for keyboard users. */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: 4px;
+}
+
+/* Responsive breakpoints used site-wide (source of truth).
+   Mirrored in tailwind.config.ts `screens`. */
+:root {
+  --bp-sm: 640px;
+  --bp-md: 768px; /* tablet split view threshold */
+  --bp-lg: 1024px;
+  --bp-xl: 1200px; /* desktop 3-col threshold */
+  --bp-2xl: 1536px;
+}

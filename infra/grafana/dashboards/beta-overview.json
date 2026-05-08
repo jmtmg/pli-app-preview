@@ -1,0 +1,122 @@
+{
+  "title": "PLI · Beta Overview",
+  "uid": "pli-beta-overview",
+  "tags": ["pli", "m4", "beta"],
+  "timezone": "Europe/Paris",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Beta users activés (cumul)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "pli_beta_users_activated_total",
+          "legendFormat": "activés"
+        }
+      ],
+      "options": { "colorMode": "value", "graphMode": "area" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "orange", "value": 30 },
+              { "color": "green", "value": 60 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Users actifs 24 h",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        { "expr": "count(count_over_time(pli_user_activity{event=\"app_open\"}[24h]))" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Répartition par batch",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (batch) (pli_beta_users_activated_total)",
+          "legendFormat": "batch {{batch}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "NPS roulant 7 j",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "pli_nps_rolling_7d", "legendFormat": "NPS" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "min": -100,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": -100 },
+              { "color": "orange", "value": 20 },
+              { "color": "green", "value": 40 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Rétention par cohorte batch",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "pli_retention_ratio", "legendFormat": "{{batch}} — J{{horizon}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Funnel activation (batch sélectionné)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "pli_activation_funnel{batch=\"$batch\"}",
+          "legendFormat": "{{event}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Tickets Discord ouverts",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "pli_feedback_submissions_total", "legendFormat": "{{kind}}" }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "batch",
+        "type": "custom",
+        "query": "1,2,3,4",
+        "current": { "text": "1", "value": "1" }
+      }
+    ]
+  }
+}

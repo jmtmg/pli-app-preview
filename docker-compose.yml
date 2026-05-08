@@ -1,0 +1,156 @@
+# PLI · environnement de développement.
+# Profil par défaut = mode local SQLite (backend + frontend).
+# Profil `cloud` = stack complète PG + MinIO + MailHog + Stripe CLI.
+#
+# Usage :
+#   docker compose up                         # local SQLite + frontend
+#   docker compose --profile cloud up         # mode cloud local-like
+#   docker compose --profile cloud --profile stripe up   # + webhook forwarding
+
+services:
+
+  # --------------------------------------------------------------------
+  # Mode LOCAL — par défaut
+  # --------------------------------------------------------------------
+  backend:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - pli_data:/data
+    environment:
+      PLI_MODE: "local"
+      PLI_DB_PATH: "/data/db.sqlite"
+      PLI_ATTACHMENTS_DIR: "/data/att"
+      PLI_GOOGLE_CLIENT_ID: "${PLI_GOOGLE_CLIENT_ID:-}"
+      PLI_GOOGLE_CLIENT_SECRET: "${PLI_GOOGLE_CLIENT_SECRET:-}"
+      PLI_MICROSOFT_CLIENT_ID: "${PLI_MICROSOFT_CLIENT_ID:-}"
+      PLI_MICROSOFT_CLIENT_SECRET: "${PLI_MICROSOFT_CLIENT_SECRET:-}"
+      PYTHONUNBUFFERED: "1"
+    command: >
+      bash -c "
+        pip install -e .[dev] --quiet &&
+        uvicorn pli.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir pli
+      "
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_BACKEND_URL: "http://backend:8000"
+    command: >
+      sh -c "
+        npm install --silent &&
+        npm run dev -- --host 0.0.0.0
+      "
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # --------------------------------------------------------------------
+  # Mode CLOUD — profil `cloud`
+  # --------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["cloud"]
+    environment:
+      POSTGRES_USER: pli
+      POSTGRES_PASSWORD: pli
+      POSTGRES_DB: pli
+    ports: ["5432:5432"]
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "pli"]
+      interval: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    profiles: ["cloud"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    profiles: ["cloud"]
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing local/pli-staging-attachments;
+      "
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    profiles: ["cloud"]
+    ports: ["1025:1025", "8025:8025"]   # SMTP + UI http://localhost:8025
+
+  cloud-app:
+    image: python:3.11-slim
+    profiles: ["cloud"]
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    environment:
+      PLI_MODE: "cloud"
+      PLI_DATABASE_URL: "postgresql://pli:pli@postgres:5432/pli"
+      PLI_S3_ENDPOINT_URL: "http://minio:9000"
+      PLI_S3_ACCESS_KEY: "minioadmin"
+      PLI_S3_SECRET_KEY: "minioadmin"
+      PLI_S3_BUCKET: "pli-staging-attachments"
+      PLI_EMAIL_PROVIDER: "smtp"
+      PLI_EMAIL_SMTP_HOST: "mailhog"
+      PLI_EMAIL_SMTP_PORT: "1025"
+      PLI_SECRET_KEY: "dev-only-change-in-prod"
+      PLI_CLOUD_CRYPTO_KEY: "S9bHVMfIgDZF2XQm-P_C7nl8VEa5dT_4cSOehLZ6Y4w="
+      PLI_STRIPE_SECRET_KEY: "${PLI_STRIPE_SECRET_KEY:-sk_test_dummy}"
+      PLI_STRIPE_WEBHOOK_SECRET: "${PLI_STRIPE_WEBHOOK_SECRET:-whsec_test_dummy}"
+      PLI_STRIPE_PRICE_MONTHLY: "${PLI_STRIPE_PRICE_MONTHLY:-price_test_monthly}"
+      PLI_STRIPE_PRICE_YEARLY: "${PLI_STRIPE_PRICE_YEARLY:-price_test_yearly}"
+      PLI_BASE_URL: "http://localhost:8000"
+      PLI_APP_URL: "http://localhost:5173"
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      postgres: { condition: service_healthy }
+      minio: { condition: service_started }
+      mailhog: { condition: service_started }
+    command: >
+      bash -c "
+        pip install -e .[dev] --quiet &&
+        alembic upgrade head &&
+        uvicorn pli.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    ports: ["8001:8000"]
+
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    profiles: ["stripe"]
+    environment:
+      STRIPE_API_KEY: "${PLI_STRIPE_SECRET_KEY:-}"
+    depends_on: [cloud-app]
+    command: listen --forward-to cloud-app:8000/billing/webhook
+
+volumes:
+  pli_data:
+  pg_data:
+  minio_data:

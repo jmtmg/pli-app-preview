@@ -1,0 +1,25 @@
+{
+  "new_message": "New message",
+  "reply": "Reply",
+  "reply_all": "Reply all",
+  "forward": "Forward",
+  "to": "To",
+  "cc": "Cc",
+  "bcc": "Bcc",
+  "subject": "Subject",
+  "body_placeholder": "Write your message…",
+  "send": "Send",
+  "sending": "Sending…",
+  "sent": "Sent",
+  "save_draft": "Save draft",
+  "draft_saved": "Draft saved",
+  "attach": "Attachment",
+  "attachment_too_large": "File too large ({{size}}). Limit: {{limit}}.",
+  "signature": "Signature",
+  "from_account": "From",
+  "errors": {
+    "send_failed": "Send failed. Please retry.",
+    "no_recipient": "Add at least one recipient.",
+    "no_subject_confirm": "Send without a subject?"
+  }
+}

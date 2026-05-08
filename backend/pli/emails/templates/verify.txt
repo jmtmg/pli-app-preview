@@ -1,0 +1,12 @@
+Bonjour,
+
+Pour activer votre compte PLI, confirmez votre adresse email en ouvrant ce lien :
+
+{{ verify_url }}
+
+Ce lien expire dans 24 heures.
+
+Si vous n'avez pas créé de compte PLI, ignorez cet email.
+
+— L'équipe PLI
+{{ app_url }}

@@ -1,0 +1,38 @@
+/* Design tokens — cf. doc 03-Wireframes.md §2 */
+:root {
+  --bg: #0b0b0c;
+  --bg-elev-1: #121214;
+  --bg-elev-2: #18181b;
+  --bg-elev-3: rgba(34,34,38,0.2);
+  --bg-pinned: #131318;
+  --border: #242428;
+  --border-strong: #3a3a40;
+  --text: #ededed;
+  --text-muted: #8b8b92;
+  --text-dim: #5c5c63;
+  --text-ghost: #404046;
+  --accent: #c9a47d;
+  --accent-soft: rgba(201,164,125,0.14);
+  --bubble-in: #1c1c20;
+  --bubble-out: #2a2520;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+[data-theme="light"] {
+  --bg: #f7f7f5;
+  --bg-elev-1: #ffffff;
+  --bg-elev-2: #ececec;
+  --bg-elev-3: rgba(0,0,0,0.04);
+  --bg-pinned: #f1eee8;
+  --border: #e2e2e0;
+  --border-strong: #c2c2be;
+  --text: #121214;
+  --text-muted: #5a5a62;
+  --text-dim: #8e8e95;
+  --text-ghost: #c0c0c6;
+  --accent: #8a6538;
+  --accent-soft: rgba(138,101,56,0.14);
+  --bubble-in: #ebebe7;
+  --bubble-out: #e3d9ca;
+}

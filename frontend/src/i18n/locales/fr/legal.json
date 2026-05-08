@@ -1,0 +1,25 @@
+{
+  "mentions": {
+    "title": "Mentions légales",
+    "open": "Lire les mentions légales"
+  },
+  "cgu": {
+    "title": "Conditions générales",
+    "open": "Lire les CGU"
+  },
+  "privacy": {
+    "title": "Politique de confidentialité",
+    "open": "Lire la politique de confidentialité"
+  },
+  "subprocessors": {
+    "title": "Sous-traitants",
+    "open": "Voir la liste des sous-traitants"
+  },
+  "cookie_banner": {
+    "title": "Cookies",
+    "body": "Nous utilisons uniquement des cookies strictement nécessaires. Les cookies analytiques sont optionnels et désactivés par défaut.",
+    "accept_analytics": "Activer les analytics",
+    "refuse_analytics": "Refuser",
+    "manage": "Gérer"
+  }
+}
