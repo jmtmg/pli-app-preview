@@ -10,12 +10,12 @@ interface Props {
 }
 
 const COPY: Record<FilterKind | "none", { title: string; body: string }> = {
-  humans:      { title: "Boite au calme",  body: "Aucun humain ne t'a ecrit dans ce filtre." },
-  notifs:      { title: "Pas de bruit",    body: "Les notifs des apps apparaitront ici." },
-  unread:      { title: "Tout est lu",     body: "Plus rien a traiter, profite." },
-  attachments: { title: "Pas de pieces",   body: "Les fichiers recus apparaitront ici." },
-  all:         { title: "Boite vide",      body: "Aucune conversation pour ce compte." },
-  none:        { title: "Selectionne une conversation", body: "Pour commencer a lire ou a repondre." },
+  humans:      { title: "Boîte au calme",  body: "Aucun humain ne t’a écrit dans ce filtre." },
+  notifs:      { title: "Pas de bruit",    body: "Les notifs des apps apparaîtront ici." },
+  unread:      { title: "Tout est lu",     body: "Plus rien à traiter, profite." },
+  attachments: { title: "Pas de pièces",   body: "Les fichiers reçus apparaîtront ici." },
+  all:         { title: "Boîte vide",      body: "Aucune conversation pour ce compte." },
+  none:        { title: "Sélectionne une conversation", body: "Pour commencer à lire ou à répondre." },
 };
 
 export function EmptyState({ filter }: Props) {

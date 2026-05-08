@@ -42,28 +42,39 @@ export function Composer({ contactId }: Props) {
 
   return (
     <div className="border-t border-border bg-bg" style={{ paddingBottom: "var(--safe-bottom)" }}>
-      <div className="px-3 py-1.5 text-[11px] text-text-dim border-b border-border">
-        Sujet : <span className="text-text-muted">réponse en cours</span>
+      <div className="px-3 py-1.5 text-[11px] text-text-dim border-b border-border truncate">
+        ↳ <span className="text-text-muted">RE: réponse en cours</span>
         <span className="mx-1.5">·</span>
-        De : <span className="text-text-muted">jms2b99@gmail.com</span>
+        Sig. <span className="text-text-muted">Démo</span>
+        <span className="mx-1.5">·</span>
+        De <span className="text-text-muted">demo@pli-app.fr</span>
       </div>
       <div className="px-3 py-2 flex items-end gap-2">
+        <button
+          type="button"
+          className="w-10 h-10 rounded-full hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center text-text-muted transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+          aria-label="Ajouter une pièce jointe"
+          title="Pièces jointes — à câbler"
+        >
+          📎
+        </button>
         <textarea
           ref={ref}
           value={body}
           onChange={e => setBody(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="Écrire un message…"
+          placeholder="Message"
           rows={1}
-          className="flex-1 resize-none bg-bg-e2 rounded-2xl px-3 py-2 text-[14px] placeholder:text-text-dim border border-transparent focus:border-border-strong focus:outline-none"
+          className="flex-1 resize-none bg-bg-e2 rounded-2xl px-3.5 py-2.5 text-[14px] placeholder:text-text-dim border border-transparent focus:border-border-strong focus:outline-none max-h-[100px]"
         />
         <button
           onClick={handleSend}
           disabled={!body.trim() || send.isPending}
-          className="h-9 px-4 rounded-full bg-accent text-[#0b0b0c] text-[13px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          className="w-10 h-10 rounded-full bg-accent text-[#0b0b0c] text-[17px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           title="Envoyer (Cmd/Ctrl + Entrée)"
+          aria-label="Envoyer le message"
         >
-          {send.isPending ? "…" : "Envoyer"}
+          {send.isPending ? "…" : "→"}
         </button>
       </div>
     </div>

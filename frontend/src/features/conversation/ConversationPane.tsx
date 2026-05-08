@@ -27,26 +27,37 @@ export function ConversationPane({ contactId, onClose, onOpenContact }: Props) {
 
   return (
     <section className="flex flex-col min-h-0 bg-bg">
-      <header className="h-14 border-b border-border px-3 flex items-center gap-2">
+      <header
+        className="border-b border-border px-2.5 flex items-center gap-1 shrink-0"
+        style={{ height: "calc(52px + var(--safe-top))", paddingTop: "var(--safe-top)" }}
+      >
         <button
           onClick={onClose}
-          className="md:hidden w-9 h-9 rounded-lg hover:bg-bg-e3 flex items-center justify-center"
+          className="md:hidden w-10 h-10 rounded-[10px] hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           aria-label="Retour"
         >
           ←
         </button>
         <button
           onClick={onOpenContact}
-          className="flex items-center gap-2.5 flex-1 min-w-0 hover:bg-bg-e3 rounded-lg px-2 py-1 transition-colors xl:pointer-events-none xl:hover:bg-transparent"
+          className="flex items-center gap-2.5 flex-1 min-w-0 hover:bg-bg-e3 active:bg-bg-e2 rounded-[10px] px-2 py-1 transition-colors xl:pointer-events-none xl:hover:bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           aria-label="Voir la fiche contact"
         >
           <Avatar initials={title.slice(0, 2)} size={32} />
           <div className="min-w-0 text-left">
-            <div className="truncate text-[14px] font-semibold">{title}</div>
+            <div className="truncate text-[15px] font-semibold">{title}</div>
             {contact?.company && (
               <div className="truncate text-[11px] text-text-dim">{contact.company}</div>
             )}
           </div>
+        </button>
+        <button
+          type="button"
+          className="w-10 h-10 rounded-[10px] hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center text-text-muted transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+          aria-label="Actions de conversation"
+          title="Menu actions — à câbler en bottom sheet"
+        >
+          ⋮
         </button>
       </header>
 

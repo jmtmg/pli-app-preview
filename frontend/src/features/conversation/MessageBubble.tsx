@@ -28,8 +28,8 @@ export function MessageBubble({ msg }: Props) {
   return (
     <div className={clsx("flex flex-col gap-1", out ? "items-end" : "items-start")}>
       {msg.subject && (
-        <div className="text-[11px] text-text-dim uppercase tracking-wide px-1">
-          {msg.subject}
+        <div className="text-[11px] text-text-dim px-1">
+          ↳ {msg.subject}
         </div>
       )}
       <div

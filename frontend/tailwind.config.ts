@@ -22,6 +22,11 @@ export default {
         "accent-soft": "var(--accent-soft)",
         "bubble-in":  "var(--bubble-in)",
         "bubble-out": "var(--bubble-out)",
+        unread: "var(--unread)",
+        "action-pin": "var(--action-pin)",
+        "action-unread": "var(--action-unread)",
+        "action-mute": "var(--action-mute)",
+        "action-archive": "var(--action-archive)",
       },
       fontFamily: {
         sys: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"Segoe UI"', "Roboto", "sans-serif"],

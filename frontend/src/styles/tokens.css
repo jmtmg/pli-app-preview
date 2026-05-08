@@ -15,6 +15,14 @@
   --accent-soft: rgba(201,164,125,0.14);
   --bubble-in: #1c1c20;
   --bubble-out: #2a2520;
+  --unread: #c9a47d;
+  --action-pin: #7a9e7e;
+  --action-unread: #7a8ba3;
+  --action-mute: #9a8b7a;
+  --action-archive: #b85a5a;
+  --motion-micro: 150ms;
+  --motion-std: 280ms;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }

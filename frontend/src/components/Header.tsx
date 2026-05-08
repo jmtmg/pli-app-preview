@@ -1,43 +1,51 @@
 /**
- * Header global — 56 px.
- * Sprint 2 · FE — owner : FE.
- * Prototype HTML : `Mail/index.html` (header avec avatar comptes + recherche).
+ * Header global — référence Cowork `03-Wireframes.md` §3.2 écran A.
+ *
+ * Règle design : 52 px sous safe area, chrome minimal, menu/drawer, compte
+ * actif, actions recherche + composer. La recherche globale reste à câbler en
+ * modal plein écran ; le bouton est gardé comme affordance visuelle P0.
  */
-import { useState } from "react";
-
 interface Props {
   onOpenDrawer: () => void;
 }
 
 export function Header({ onOpenDrawer }: Props) {
-  const [query, setQuery] = useState("");
-
   return (
     <header
-      className="h-14 px-3 border-b border-border grid grid-cols-[auto_1fr_auto] items-center gap-2 bg-bg"
-      style={{ paddingTop: "var(--safe-top)" }}
+      className="px-2.5 border-b border-border flex items-center gap-1 bg-bg shrink-0"
+      style={{ height: "calc(52px + var(--safe-top))", paddingTop: "var(--safe-top)" }}
     >
       <button
         onClick={onOpenDrawer}
-        className="w-9 h-9 rounded-full bg-bg-e2 text-[13px] font-semibold flex items-center justify-center hover:bg-bg-e3 transition-colors"
-        aria-label="Changer de compte"
+        className="w-10 h-10 rounded-[10px] hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center text-text-muted transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+        aria-label="Ouvrir le menu comptes"
       >
-        JM
+        ☰
       </button>
 
-      <div className="relative">
-        <input
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          type="search"
-          placeholder="Rechercher"
-          className="w-full h-9 px-3 rounded-lg bg-bg-e2 text-[14px] placeholder:text-text-dim border border-transparent focus:border-border-strong focus:outline-none"
-          aria-label="Rechercher"
-        />
-      </div>
+      <button
+        onClick={onOpenDrawer}
+        className="w-10 h-10 rounded-full bg-bg-e2 text-[13px] font-semibold flex items-center justify-center hover:bg-bg-e3 active:bg-bg-e2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+        aria-label="Compte actif PLI demo"
+        title="Compte demo"
+      >
+        P
+      </button>
+
+      <div className="flex-1" aria-hidden />
 
       <button
-        className="w-9 h-9 rounded-lg hover:bg-bg-e3 flex items-center justify-center text-text-muted transition-colors"
+        type="button"
+        className="w-10 h-10 rounded-[10px] hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center text-text-muted transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+        aria-label="Rechercher"
+        title="Recherche globale — à câbler en modal"
+      >
+        🔍
+      </button>
+
+      <button
+        type="button"
+        className="w-10 h-10 rounded-[10px] hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center text-accent transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         aria-label="Nouveau message"
         title="Nouveau message (Cmd/Ctrl + N)"
       >

@@ -18,6 +18,7 @@ Ce qui est terminé et vérifié :
 - adresse de test locale créée et seedée : `test.pli@demo-pli.com` ;
 - composer local `POST /messages/send` OK ;
 - frontend React/Vite MVP buildable et servable ;
+- design Cowork pris en compte via `PLI_DESIGN_SOURCE_OF_TRUTH.md` et première passe UI alignée mobile-first ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;
@@ -83,6 +84,20 @@ Preview temporaire lancé sur `127.0.0.1:18081` après build :
 - HTML contient `PLI` et les assets Vite (`/assets/...`).
 
 Les serveurs temporaires ont été stoppés. Les ports `18080` et `18081` ne sont plus en écoute.
+
+## Design Cowork pris en compte
+
+Source canon locale ajoutée : `PLI_DESIGN_SOURCE_OF_TRUTH.md`.
+
+Elle synthétise les demandes et artefacts Cowork vérifiés :
+
+- `02-Documents-Projet/03-Wireframes.md` ;
+- `02-Documents-Projet/Mail/index.html` ;
+- transcript de livraison M1 (`01-Echanges/Transcripts-Bruts/01-PLI-M1.jsonl`, ligne ~75).
+
+Première passe appliquée au frontend React : header mobile 52 px, chrome minimal, bouton menu + compte + recherche + composer, composer inline plus proche wireframe avec trombone/champ/bouton rond, sujet discret `↳`, suppression d’un email personnel de démonstration dans l’UI, tokens action/motion alignés.
+
+Écarts UI restants volontairement visibles : recherche globale en modal, swipe bilatéral, bottom sheets, long-press drag-and-drop, drawer desktop persistant, fiche contact complète.
 
 ## Qualité frontend / audit npm
 

@@ -50,7 +50,7 @@ export function ConversationRow({ conv, selected, onClick }: Props) {
         aria-label={ariaLabel}
         aria-current={selected ? "true" : undefined}
         className={clsx(
-          "w-full grid grid-cols-[48px_1fr_auto] gap-3 px-3.5 py-3 items-center text-left transition-colors min-h-[64px]",
+          "w-full grid grid-cols-[48px_1fr_auto] gap-3 px-3.5 py-3 items-center text-left transition-colors min-h-[68px]",
           "hover:bg-bg-e3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent",
           conv.is_pinned ? "bg-bg-pinned" : "bg-bg",
           selected && "bg-bg-e3",
@@ -94,7 +94,7 @@ export function ConversationRow({ conv, selected, onClick }: Props) {
             )}
             {hasUnread && (
               <span
-                className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-[11px] font-bold text-[#0b0b0c] text-center leading-[18px]"
+                className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-unread text-[11px] font-bold text-[#0b0b0c] text-center leading-[18px]"
                 aria-hidden
               >
                 {conv.unread_count > 99 ? "99+" : conv.unread_count}
