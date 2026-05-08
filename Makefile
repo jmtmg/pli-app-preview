@@ -3,7 +3,7 @@
 # Chaque cible suppose que vous êtes à la racine de `pli-app/`.
 
 .PHONY: help install install-be install-fe dev dev-be dev-fe demo \
-        test test-be test-be-all test-fe test-sec lint lint-be lint-fe typecheck typecheck-all \
+        test test-be test-be-all test-be-future test-fe test-sec lint lint-be lint-fe typecheck typecheck-all typecheck-future \
         fmt fmt-be fmt-fe clean docker-up docker-down \
         db-migrate db-revision cloud-up cloud-down stripe-listen
 
@@ -15,10 +15,12 @@ help:
 	@echo "  dev-fe         frontend uniquement (vite)"
 	@echo "  demo           lance backend demo + frontend"
 	@echo "  test           exécute les tests MVP des deux côtés"
-	@echo "  test-sec       rejoue les tests d'isolation tenant (CI blocker)"
-	@echo "  lint           ruff MVP + tsc --noEmit"
+	@echo "  test-sec       rejoue les tests d'isolation tenant (CI blocker historique)"
+	@echo "  test-be-future rejoue les strates backend futures isolées (doit échouer tant que non intégrées)"
+	@echo "  lint           ruff MVP + ESLint 9 flat config + tsc --noEmit"
 	@echo "  typecheck      mypy MVP + tsc --noEmit"
-	@echo "  typecheck-all  mypy backend complet + tsc --noEmit"
+	@echo "  typecheck-all  mypy backend complet + tsc --noEmit (historique, non vert tant que M2-M4 non intégrés)"
+	@echo "  typecheck-future mypy des modules backend futurs isolés"
 	@echo "  fmt            ruff format + prettier"
 	@echo "  db-migrate     applique les migrations Alembic (mode selon PLI_MODE)"
 	@echo "  db-revision m=… crée une nouvelle révision Alembic"
@@ -88,11 +90,48 @@ BACKEND_MVP_TYPECHECK_TARGETS := \
 	pli/api/search.py \
 	pli/api/demo.py
 
+# Strates récupérées M2-M4 non intégrées au runtime local MVP.
+# Ces commandes gardent le signal historique reproductible sans les faire
+# passer pour des gates du produit local fonctionnel.
+BACKEND_FUTURE_TESTS := \
+	tests/test_auth_flow.py \
+	tests/test_auth_oauth.py \
+	tests/test_tenancy_isolation.py \
+	tests/test_api_feedback.py \
+	tests/test_stripe_webhooks.py \
+	tests/test_beta_activation.py \
+	tests/test_beta_batches.py \
+	tests/test_beta_nps.py \
+	tests/test_gdpr.py \
+	tests/unit/ocr/test_worker.py \
+	tests/integration/ocr/test_api.py
+
+BACKEND_FUTURE_TYPECHECK_TARGETS := \
+	pli/auth \
+	pli/beta \
+	pli/billing \
+	pli/gdpr \
+	pli/ocr \
+	pli/providers \
+	pli/tenancy \
+	pli/api/auth.py \
+	pli/api/auth_pli.py \
+	pli/api/billing.py \
+	pli/api/feedback.py \
+	pli/api/invitations.py \
+	pli/api/licensing.py \
+	pli/api/waitlist.py \
+	pli/crypto/attachments.py \
+	pli/crypto/backups.py
+
 test-be:
 	cd backend && $(BACKEND_PY) -m pytest -q --no-cov $(BACKEND_MVP_TESTS)
 
 test-be-all:
 	cd backend && $(BACKEND_PY) -m pytest -q --no-cov
+
+test-be-future:
+	cd backend && $(BACKEND_PY) -m pytest -q --no-cov $(BACKEND_FUTURE_TESTS)
 
 test-sec:
 	cd backend && $(BACKEND_PY) -m pytest tests/test_tenancy_isolation.py -v --no-cov
@@ -115,6 +154,9 @@ typecheck:
 typecheck-all:
 	cd backend && $(BACKEND_PY) -m mypy pli
 	cd frontend && npm run type-check
+
+typecheck-future:
+	cd backend && $(BACKEND_PY) -m mypy $(BACKEND_FUTURE_TYPECHECK_TARGETS)
 
 fmt: fmt-be fmt-fe
 

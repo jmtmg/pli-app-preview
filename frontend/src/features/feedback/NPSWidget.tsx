@@ -11,8 +11,6 @@ import { useTranslation } from "react-i18next";
 import { useUserPrefs } from "@/hooks/useUserPrefs";
 import { trackEvent } from "@/api/analytics";
 
-const STORAGE_KEY = "pli.nps.last_dismissed";
-
 export function NPSWidget() {
   const { t } = useTranslation();
   const { prefs } = useUserPrefs();

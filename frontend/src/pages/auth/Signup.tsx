@@ -30,8 +30,9 @@ export default function SignupPage() {
     try {
       await signup(email, pwd);
       nav(`/auth/check-inbox?email=${encodeURIComponent(email)}`);
-    } catch (e: any) {
-      setErr(e.message.includes("409") ? "Un compte existe déjà avec cet email." : "Inscription impossible — réessayez.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
+      setErr(message.includes("409") ? "Un compte existe déjà avec cet email." : "Inscription impossible — réessayez.");
     } finally {
       setLoading(false);
     }

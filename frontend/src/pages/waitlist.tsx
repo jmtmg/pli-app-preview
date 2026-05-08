@@ -26,8 +26,8 @@ export default function WaitlistPage() {
         source: new URLSearchParams(window.location.search).get("source"),
       });
       setSent(true);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? t("waitlist.error_generic"));
+    } catch (error: unknown) {
+      setError(getApiDetail(error) ?? t("waitlist.error_generic"));
     } finally {
       setLoading(false);
     }
@@ -83,4 +83,10 @@ export default function WaitlistPage() {
       </section>
     </main>
   );
+}
+
+function getApiDetail(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("response" in error)) return undefined;
+  const response = (error as { response?: { data?: { detail?: unknown } } }).response;
+  return typeof response?.data?.detail === "string" ? response.data.detail : undefined;
 }

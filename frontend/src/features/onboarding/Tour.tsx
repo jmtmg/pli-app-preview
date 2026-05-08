@@ -56,7 +56,6 @@ const STEPS: Step[] = [
 
 export function Tour() {
   const { prefs, refetch } = useUserPrefs();
-  const { t } = useTranslation();
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(false);
 

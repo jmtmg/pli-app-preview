@@ -31,9 +31,9 @@ export default function InvitedPage() {
       await apiClient.post("/invitations/redeem", { code });
       setState("ok");
       setTimeout(() => nav("/", { replace: true }), 1500);
-    } catch (err: any) {
+    } catch (error: unknown) {
       setState("error");
-      setError(err?.response?.data?.detail ?? t("invited.error_generic"));
+      setError(getApiDetail(error) ?? t("invited.error_generic"));
     }
   };
 
@@ -79,4 +79,10 @@ export default function InvitedPage() {
       </section>
     </main>
   );
+}
+
+function getApiDetail(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("response" in error)) return undefined;
+  const response = (error as { response?: { data?: { detail?: unknown } } }).response;
+  return typeof response?.data?.detail === "string" ? response.data.detail : undefined;
 }

@@ -21,8 +21,9 @@ export default function LoginPage() {
     try {
       await login(email, pwd);
       nav(redirectTo, { replace: true });
-    } catch (e: any) {
-      if (e.message.includes("403")) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes("403")) {
         setErr("Votre email n'est pas encore vérifié. Vérifiez votre boîte de réception.");
       } else {
         setErr("Email ou mot de passe incorrect.");

@@ -74,8 +74,8 @@ export default function MyDataPage() {
       const r = await apiClient.post<ExportJob>("/gdpr/export");
       setExportJob(r.data);
       toast.success(t("export.requested"));
-    } catch (e: any) {
-      const msg = e?.response?.status === 429 ? t("export.rate_limited") : t("export.error");
+    } catch (error: unknown) {
+      const msg = getHttpStatus(error) === 429 ? t("export.rate_limited") : t("export.error");
       toast.error(msg);
     }
   }
@@ -229,6 +229,12 @@ export default function MyDataPage() {
       </Section>
     </main>
   );
+}
+
+function getHttpStatus(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null || !("response" in error)) return undefined;
+  const response = (error as { response?: { status?: unknown } }).response;
+  return typeof response?.status === "number" ? response.status : undefined;
 }
 
 function Section({

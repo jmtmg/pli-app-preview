@@ -31,7 +31,7 @@ export function DeleteAccountButton({ deletionState, onChange }: Props) {
       setOpen(false);
       setPassword("");
       setConfirmed(false);
-    } catch (e: any) {
+    } catch {
       toast.error(t("delete.error"));
     } finally {
       setSubmitting(false);
