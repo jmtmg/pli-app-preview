@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import base64
 import binascii
+import sqlite3
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, cast
 
 import structlog
 from fastapi import APIRouter, HTTPException, Query
@@ -109,7 +110,7 @@ def list_conversations(
                 WHERE m.contact_id = c.id
                 ORDER BY m.received_at DESC LIMIT 1) AS last_preview
         FROM contacts c
-        WHERE 1=1
+        WHERE c.is_archived = 0
         """,
     ]
     params: list[object] = []
@@ -194,15 +195,30 @@ def list_conversations(
 
 
 # ---------------------------------------------------------------------------
-# Pin / mute — simples
+# Actions rapides liste : pin / non-lu / silence / archive
 # ---------------------------------------------------------------------------
 
 
-@router.post("/{contact_id}/pin", summary="Epingler une conversation (max 3)")
+def _get_contact_action_context(conn: sqlite3.Connection, contact_id: str) -> sqlite3.Row:
+    row = conn.execute(
+        "SELECT id, account_id, is_pinned, pinned_order FROM contacts WHERE id = ?",
+        (contact_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(404, "Conversation introuvable")
+    return cast(sqlite3.Row, row)
+
+
+@router.post("/{contact_id}/pin", summary="Epingler une conversation (max 3 par compte)")
 def pin(contact_id: str) -> dict[str, object]:
     with get_conn() as conn:
+        contact = _get_contact_action_context(conn, contact_id)
+        if contact["is_pinned"]:
+            return {"ok": True, "contact_id": contact_id}
+
         pinned_count = conn.execute(
-            "SELECT COUNT(*) AS n FROM contacts WHERE is_pinned = 1"
+            "SELECT COUNT(*) AS n FROM contacts WHERE account_id = ? AND is_pinned = 1",
+            (contact["account_id"],),
         ).fetchone()["n"]
         if pinned_count >= 3:
             return {"ok": False, "reason": "limit_3_reached"}
@@ -217,20 +233,82 @@ def pin(contact_id: str) -> dict[str, object]:
 @router.post("/{contact_id}/unpin")
 def unpin(contact_id: str) -> dict[str, object]:
     with get_conn() as conn:
+        contact = _get_contact_action_context(conn, contact_id)
+        old_order = contact["pinned_order"]
         conn.execute(
             "UPDATE contacts SET is_pinned = 0, pinned_order = NULL WHERE id = ?",
             (contact_id,),
         )
+        if old_order is not None:
+            conn.execute(
+                """
+                UPDATE contacts
+                SET pinned_order = pinned_order - 1
+                WHERE account_id = ? AND is_pinned = 1 AND pinned_order > ?
+                """,
+                (contact["account_id"], old_order),
+            )
         conn.commit()
     return {"ok": True, "contact_id": contact_id}
+
+
+@router.post("/{contact_id}/mark-unread", summary="Marquer la conversation non lue")
+def mark_conversation_unread(contact_id: str) -> dict[str, object]:
+    with get_conn() as conn:
+        _get_contact_action_context(conn, contact_id)
+        latest_incoming = conn.execute(
+            """
+            SELECT id FROM messages
+            WHERE contact_id = ? AND direction = 'in'
+            ORDER BY received_at DESC, id DESC
+            LIMIT 1
+            """,
+            (contact_id,),
+        ).fetchone()
+        if latest_incoming is None:
+            return {"ok": False, "contact_id": contact_id, "reason": "no_incoming_message"}
+
+        conn.execute("UPDATE messages SET is_read = 0 WHERE id = ?", (latest_incoming["id"],))
+        unread_count = conn.execute(
+            """
+            SELECT COUNT(*) AS n FROM messages
+            WHERE contact_id = ? AND direction = 'in' AND is_read = 0
+            """,
+            (contact_id,),
+        ).fetchone()["n"]
+        conn.execute(
+            "UPDATE contacts SET unread_count = ? WHERE id = ?",
+            (unread_count, contact_id),
+        )
+        conn.commit()
+    return {"ok": True, "contact_id": contact_id, "unread_count": unread_count}
 
 
 @router.post("/{contact_id}/mute")
 def mute(contact_id: str, muted: bool = True) -> dict[str, object]:
     with get_conn() as conn:
+        _get_contact_action_context(conn, contact_id)
         conn.execute(
             "UPDATE contacts SET is_muted = ? WHERE id = ?",
             (1 if muted else 0, contact_id),
         )
         conn.commit()
     return {"ok": True, "muted": muted}
+
+
+@router.post("/{contact_id}/archive", summary="Archiver / désarchiver une conversation")
+def archive(contact_id: str, archived: bool = True) -> dict[str, object]:
+    with get_conn() as conn:
+        _get_contact_action_context(conn, contact_id)
+        conn.execute(
+            """
+            UPDATE contacts
+            SET is_archived = ?,
+                is_pinned = CASE WHEN ? = 1 THEN 0 ELSE is_pinned END,
+                pinned_order = CASE WHEN ? = 1 THEN NULL ELSE pinned_order END
+            WHERE id = ?
+            """,
+            (1 if archived else 0, 1 if archived else 0, 1 if archived else 0, contact_id),
+        )
+        conn.commit()
+    return {"ok": True, "contact_id": contact_id, "archived": archived}

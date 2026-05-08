@@ -132,6 +132,17 @@ export const usePinMutation = () => {
   });
 };
 
+export const useConversationActionMutation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ path }: { path: string }) => post<Record<string, unknown>>(path),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
+};
+
 export const useSendMessage = () => {
   const qc = useQueryClient();
   return useMutation({

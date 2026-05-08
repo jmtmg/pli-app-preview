@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS contacts (
     is_muted        INTEGER NOT NULL DEFAULT 0,
     is_pinned       INTEGER NOT NULL DEFAULT 0,
     pinned_order    INTEGER,                        -- rank 1..3 si épinglé
+    is_archived     INTEGER NOT NULL DEFAULT 0,      -- archive locale reversible
     kind            TEXT NOT NULL DEFAULT 'human',  -- 'human' | 'notif'
     last_msg_at     INTEGER,                        -- pour tri liste
     unread_count    INTEGER NOT NULL DEFAULT 0,

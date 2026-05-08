@@ -179,3 +179,62 @@ def test_response_includes_last_preview_and_iso_timestamp(client, seeded_db):  #
     # last_msg_at serialise en ISO avec timezone
     assert item["last_msg_at"] is not None
     assert "T" in item["last_msg_at"]
+
+
+# --------------------------------------------------------------------------
+# Actions rapides liste : pin / non-lu / silence / archive
+# --------------------------------------------------------------------------
+
+
+def test_pin_limit_is_scoped_to_account(client, seeded_db):  # type: ignore[no-untyped-def]
+    """3 épinglées dans B ne doivent pas bloquer Épingler dans A."""
+    from pli.db import get_conn
+
+    with get_conn() as conn:
+        conn.execute("UPDATE contacts SET is_pinned = 1, pinned_order = 1 WHERE id = 'c-carol'")
+        conn.execute("UPDATE contacts SET is_pinned = 1, pinned_order = 2 WHERE id = 'c-dave'")
+        conn.commit()
+
+    r = client.post("/conversations/c-bob/pin")
+
+    assert r.status_code == 200
+    assert r.json() == {"ok": True, "contact_id": "c-bob"}
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT is_pinned, pinned_order FROM contacts WHERE id = 'c-bob'"
+        ).fetchone()
+    assert row["is_pinned"] == 1
+    assert row["pinned_order"] == 2
+
+
+def test_mark_conversation_unread_marks_latest_incoming_message(client, seeded_db):  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    with get_conn() as conn:
+        conn.execute("UPDATE messages SET is_read = 1 WHERE id = 'm-c-bob'")
+        conn.execute("UPDATE contacts SET unread_count = 0 WHERE id = 'c-bob'")
+        conn.commit()
+
+    r = client.post("/conversations/c-bob/mark-unread")
+
+    assert r.status_code == 200
+    assert r.json() == {"ok": True, "contact_id": "c-bob", "unread_count": 1}
+    with get_conn() as conn:
+        message = conn.execute("SELECT is_read FROM messages WHERE id = 'm-c-bob'").fetchone()
+        contact = conn.execute("SELECT unread_count FROM contacts WHERE id = 'c-bob'").fetchone()
+    assert message["is_read"] == 0
+    assert contact["unread_count"] == 1
+
+
+def test_archive_hides_conversation_from_default_lists(client, seeded_db):  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    r = client.post("/conversations/c-bob/archive")
+
+    assert r.status_code == 200
+    assert r.json() == {"ok": True, "contact_id": "c-bob", "archived": True}
+    ids = [it["contact_id"] for it in client.get("/conversations?account_id=A&filter=all").json()["items"]]
+    assert "c-bob" not in ids
+    with get_conn() as conn:
+        archived = conn.execute("SELECT is_archived FROM contacts WHERE id = 'c-bob'").fetchone()["is_archived"]
+    assert archived == 1

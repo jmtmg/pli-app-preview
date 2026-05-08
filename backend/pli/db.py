@@ -55,8 +55,25 @@ def init_db_local() -> None:
     with _connect_sqlite(settings.db_path, key) as conn:
         with SCHEMA_PATH.open() as f:
             conn.executescript(f.read())
+        _migrate_local_schema(conn)
         conn.commit()
     log.info("db_initialized_sqlite", path=str(settings.db_path))
+
+
+def _migrate_local_schema(conn: sqlite3.Connection) -> None:
+    """Petites migrations idempotentes du MVP SQLite local.
+
+    Le schéma est appliqué via `CREATE TABLE IF NOT EXISTS`; une base démo déjà
+    créée ne reçoit donc pas automatiquement les nouvelles colonnes. On garde ici
+    les ajouts non destructifs nécessaires aux features actives.
+    """
+    contact_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(contacts)").fetchall()
+    }
+    if "is_archived" not in contact_columns:
+        conn.execute(
+            "ALTER TABLE contacts ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0"
+        )
 
 
 def init_db() -> None:

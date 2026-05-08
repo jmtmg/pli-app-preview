@@ -10,6 +10,21 @@ Commit de cette tranche : `HEAD` (`chore: finalize PLI local functional status`;
 
 PLI est fonctionnel en **MVP local/démo**, sans utiliser de secrets ni de comptes externes réels.
 
+## Addendum W1 — swipe/actions rapides
+
+Date : 2026-05-08 23:22 CEST
+
+Nouvelle tranche implémentée et vérifiée :
+
+- swipe bilatéral sur chaque ligne de conversation, avec mêmes actions à gauche et à droite, ouverture à 33 % et fermeture instinctive autour de 18 % ;
+- menu `⋯` en bottom sheet mobile-first pour Épingler/Désépingler, Non lu, Silence/Réactiver, Archiver ;
+- un seul panneau swipe ouvert à la fois, fermeture par `Esc`, toast court après action ;
+- limite UX `3/3` épinglées et `Épingler` désactivé quand le compte a déjà 3 conversations épinglées ;
+- backend local complété pour `mark-unread`, `archive`, mute validé et pin limité par compte ;
+- migration SQLite locale idempotente pour `contacts.is_archived` afin de préserver les bases démo existantes.
+
+Commandes vérifiées pour cette tranche : `make test` (`103 passed, 3 skipped` backend ; `16 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
@@ -98,7 +113,7 @@ Elle synthétise les demandes et artefacts Cowork vérifiés :
 
 Première passe appliquée au frontend React : header mobile 52 px, chrome minimal, bouton menu + compte + recherche + composer, composer inline plus proche wireframe avec trombone/champ/bouton rond, sujet discret `↳`, suppression d’un email personnel de démonstration dans l’UI, tokens action/motion alignés.
 
-Écarts UI restants volontairement visibles : recherche globale en modal, swipe bilatéral, bottom sheets, long-press drag-and-drop, drawer desktop persistant, fiche contact complète.
+Écarts UI restants volontairement visibles : long-press drag-and-drop des épinglées, drawer desktop persistant, fiche contact complète.
 
 ## Qualité frontend / audit npm
 
