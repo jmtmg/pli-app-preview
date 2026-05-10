@@ -128,7 +128,7 @@ Le MVP local créé sur Mac mini est fonctionnel mais incomplet par rapport au d
 - Swipe bilatéral et menu bottom sheet implémentés pour les actions rapides MVP.
 - Long-press drag-and-drop des épinglées non implémenté.
 - Sujet du composer éditable via bottom sheet et brouillons locaux autosauvegardés, avec isolation par conversation et protection contre autosave obsolète ; CC/PJ/nouveau message restent à faire.
-- Fiche contact encore simplifiée.
+- Fiche contact MVP enrichie : avatar 76 px, infos visibles, actions Appeler/Message/Archiver, édition locale et grille PJ lisible ; restent à faire : suggestion signature réelle, historisation des anciennes valeurs et viewer PJ natif complet.
 - Drawer desktop persistant à reprendre.
 - Onboarding Local/Cloud/Démo non remis en avant dans le MVP local.
 

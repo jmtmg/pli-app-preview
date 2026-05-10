@@ -143,7 +143,7 @@ Sources principales :
 - Bandeau suggestion : Appliquer / Modifier / Ignorer.
 - Historisation des anciennes valeurs, pas d’écrasement silencieux.
 
-État MVP local actuel : fiche simplifiée présente ; édition, actions rapides, signature suggestion et PJ grid complète restent à faire.
+État MVP local actuel : fiche contact MVP enrichie et vérifiée : avatar large, nom/poste/société/email/téléphone/notes visibles, actions Appeler/Message/Archiver, édition locale via PATCH et grille PJ avec type/nom/taille/date/action Ouvrir. Restent à faire pour la v1 : suggestion depuis signature, historisation des anciennes valeurs, viewer PJ natif complet et extraction LinkedIn/adresse.
 
 ### 9. Personnalisation / UX / accessibilité
 

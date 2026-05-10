@@ -42,6 +42,21 @@ Nouvelle tranche implémentée et vérifiée :
 
 Commandes vérifiées pour cette tranche : `make test` (`107 passed, 3 skipped` backend ; `22 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`. Smoke runtime : backend `/health` OK, sauvegarde/lecture/suppression HTTP des brouillons OK, doublon client concurrent protégé côté DB, navigateur sans erreur console.
 
+## Addendum W1 — fiche contact complète MVP
+
+Date : 2026-05-10 CEST
+
+Nouvelle tranche implémentée et vérifiée :
+
+- fiche contact alignée Cowork MVP : avatar 76 px, nom, rôle/société, email, téléphone et notes visibles ;
+- actions rapides locales `Appeler`, `Message`, `Archiver` sans OAuth ni extraction de signature réelle ;
+- édition locale des champs `display_name`, `role`, `company`, `phone`, `notes` via le PATCH contact existant ;
+- grille de pièces jointes lisible avec type, nom, taille, date et action `Ouvrir` ;
+- états vides/accessibilité : téléphone/notes/PJ manquants explicites, labels ARIA, cibles 44 px ;
+- API contact enrichie pour exposer `attachments.created_at` à la grille PJ.
+
+Commandes vérifiées pour cette tranche : `make test` (`107 passed, 3 skipped` backend ; `28 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, smoke téléphone PATCH/readback sur contact démo, test FE `tel:` ciblé, `git diff --check`, scan diff secrets.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
@@ -54,6 +69,7 @@ Ce qui est terminé et vérifié :
 - recherche globale frontend câblée sur `/search`, limitée au compte actif, avec modal mobile, raccourci `Cmd/Ctrl+K`, résultats contacts/messages/PJ et highlight ;
 - swipe bilatéral + bottom sheet actions rapides implémentés pour Épingler/Non lu/Silence/Archiver ;
 - composer enrichi MVP : sujet `RE:` éditable via bottom sheet, signature démo toggle, brouillon local autosauvegardé toutes les 3 secondes et repris par conversation ;
+- fiche contact complète MVP : avatar large, infos visibles, actions Appeler/Message/Archiver, édition locale via PATCH et grille PJ lisible ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;
@@ -132,7 +148,7 @@ Elle synthétise les demandes et artefacts Cowork vérifiés :
 
 Première passe appliquée au frontend React : header mobile 52 px, chrome minimal, bouton menu + compte + recherche + composer, composer inline plus proche wireframe avec trombone/champ/bouton rond, sujet discret `↳`, suppression d’un email personnel de démonstration dans l’UI, tokens action/motion alignés.
 
-Écarts UI restants volontairement visibles : long-press drag-and-drop des épinglées, drawer desktop persistant, fiche contact complète.
+Écarts UI restants volontairement visibles : long-press drag-and-drop des épinglées, drawer desktop persistant, extraction signature réelle et nouveau message complet.
 
 ## Qualité frontend / audit npm
 

@@ -1,6 +1,6 @@
 /** TanStack Query hooks pour les endpoints PLI. */
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { del, get, post } from "./client";
+import { del, get, patch as patchRequest, post } from "./client";
 
 export type FilterKind = "humans" | "notifs" | "unread" | "attachments" | "all";
 
@@ -57,8 +57,9 @@ export interface Attachment {
   id: string;
   message_id: string;
   filename: string;
-  mime_type: string;
-  size_bytes: number;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: number | null;
 }
 
 export interface Contact {
@@ -68,8 +69,23 @@ export interface Contact {
   display_name: string | null;
   company: string | null;
   role: string | null;
+  phone: string | null;
   notes: string | null;
+  kind: "human" | "notif";
+  is_muted: boolean;
+  is_pinned: boolean;
+  pinned_order: number | null;
+  unread_count: number;
+  has_attachments: boolean;
   attachments: Attachment[];
+}
+
+export interface ContactPatchPayload {
+  display_name: string;
+  company: string;
+  role: string;
+  phone: string;
+  notes: string;
 }
 
 export interface Draft {
@@ -132,6 +148,19 @@ export const useContact = (contactId: string | null) =>
     enabled: !!contactId,
   });
 
+export const useUpdateContact = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<ContactPatchPayload> }) =>
+      patchRequest<Contact>(`/contacts/${id}`, patch),
+    onSuccess: (contact) => {
+      qc.setQueryData(["contact", contact.id], contact);
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["search"] });
+    },
+  });
+};
+
 export const useDraft = (accountId: string | null, contactId: string | null) =>
   useQuery({
     queryKey: ["draft", accountId, contactId],
@@ -164,6 +193,7 @@ export const useConversationActionMutation = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["conversations"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["contact"] });
     },
   });
 };

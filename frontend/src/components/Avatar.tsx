@@ -7,7 +7,7 @@ import clsx from "clsx";
 
 interface Props {
   initials: string;
-  size?: 32 | 40 | 48 | 56;
+  size?: 32 | 40 | 48 | 56 | 76;
   className?: string;
 }
 
@@ -16,6 +16,7 @@ const SIZE_CLASS: Record<number, string> = {
   40: "w-10 h-10 text-[13px]",
   48: "w-12 h-12 text-[14px]",
   56: "w-14 h-14 text-[16px]",
+  76: "w-[76px] h-[76px] text-[24px]",
 };
 
 export function Avatar({ initials, size = 48, className }: Props) {

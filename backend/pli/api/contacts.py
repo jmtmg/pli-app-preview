@@ -29,6 +29,7 @@ class AttachmentSummary(BaseModel):
     filename: str
     mime_type: str | None = None
     size_bytes: int | None = None
+    created_at: int | None = None
 
 
 class ContactDetail(BaseModel):
@@ -77,7 +78,7 @@ def get_contact(contact_id: str) -> ContactDetail:
         if not row:
             raise HTTPException(404, "contact introuvable")
         atts = conn.execute(
-            """SELECT id, message_id, filename, mime_type, size_bytes
+            """SELECT id, message_id, filename, mime_type, size_bytes, created_at
                FROM attachments WHERE contact_id = ?
                ORDER BY created_at DESC LIMIT 24""",
             (contact_id,),

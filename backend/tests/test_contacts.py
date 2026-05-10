@@ -35,8 +35,9 @@ def _seed_contact() -> None:
         )
         conn.execute(
             """INSERT INTO attachments (id, message_id, contact_id, filename,
-                                         mime_type, size_bytes)
-               VALUES ('att-1', 'm1', 'c-alice', 'cv.pdf', 'application/pdf', 40000)""",
+                                         mime_type, size_bytes, created_at)
+               VALUES ('att-1', 'm1', 'c-alice', 'cv.pdf', 'application/pdf', 40000, ?)""",
+            (now - 60,),
         )
         conn.commit()
 
@@ -71,6 +72,7 @@ def test_get_contact_happy_path(client) -> None:  # type: ignore[no-untyped-def]
     assert att["filename"] == "cv.pdf"
     assert att["size_bytes"] == 40000
     assert att["message_id"] == "m1"
+    assert att["created_at"] <= int(time.time())
 
 
 def test_patch_contact_updates_fields(client) -> None:  # type: ignore[no-untyped-def]
