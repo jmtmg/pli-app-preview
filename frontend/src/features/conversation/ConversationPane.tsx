@@ -86,7 +86,7 @@ export function ConversationPane({ contactId, highlightedMessageId = null, onClo
         })}
       </div>
 
-      <Composer contactId={contactId} />
+      <Composer accountId={contact?.account_id ?? null} contactId={contactId} messages={messages} />
     </section>
   );
 }

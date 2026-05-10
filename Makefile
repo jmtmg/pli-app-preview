@@ -71,13 +71,14 @@ BACKEND_MVP_TESTS := \
 	tests/test_contacts.py \
 	tests/test_conversations.py \
 	tests/test_messages.py \
+	tests/test_drafts.py \
 	tests/test_health_logging.py \
 	tests/test_storage_adapters.py \
 	tests/test_sync_gmail.py \
 	tests/test_licensing.py \
 	tests/test_emails.py
 
-BACKEND_MVP_LINT_TARGETS := pli tests/test_demo_mvp.py tests/test_local_demo.py
+BACKEND_MVP_LINT_TARGETS := pli tests/test_demo_mvp.py tests/test_local_demo.py tests/test_drafts.py
 
 BACKEND_MVP_TYPECHECK_TARGETS := \
 	pli/config.py \

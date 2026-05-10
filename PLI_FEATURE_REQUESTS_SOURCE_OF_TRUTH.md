@@ -99,7 +99,7 @@ Sources principales :
 - OCR asynchrone pour images/PDF scannés.
 - Recherche limitée au compte actif au MVP.
 
-État MVP local actuel : backend recherche partiel ; frontend modal plein écran et résultats groupés non encore implémentés.
+État MVP local actuel : implémenté et vérifié pour le périmètre MVP : modal plein écran frontend, focus champ, résultats groupés contacts/messages/PJ, highlight bronze, raccourci `Cmd/Ctrl+K`, sélection vers conversation/message, et scope strict `account_id`. Recherche contenu PJ/OCR et benchmark 50k restent à faire pour v1 complète.
 
 ### 6. Épinglage, actions rapides, swipe
 
@@ -115,7 +115,7 @@ Sources principales :
 - Seuil ouverture 33 %, fermeture instinctive 15–20 %.
 - Un seul panneau swipe ouvert à la fois.
 
-État MVP local actuel : épinglées de démo visibles ; mutations/backend partiels. Swipe, menu sheet, limite UX X/3, silence/archive, drag-and-drop restent à implémenter.
+État MVP local actuel : swipe bilatéral, bottom sheet actions rapides, limite UX 3/3, non-lu, silence/réactiver, archiver et mutations backend locales sont implémentés et vérifiés. Long-press drag-and-drop des épinglées et polish final restent à faire.
 
 ### 7. Composer et envoi
 
@@ -130,7 +130,7 @@ Sources principales :
 - PJ au composer : trombone, sélecteur natif, tuiles preview, retrait, limite 25 Mo, plusieurs PJ.
 - Envoi via Gmail API ou Microsoft Graph.
 
-État MVP local actuel : composer local et envoi simulé OK ; sujet/signature affichés en démo. Bottom sheet sujet, CC, nouveau message modal, drafts, PJ et vrai envoi provider restent à faire.
+État MVP local actuel : composer local et envoi simulé OK ; sujet `RE:` éditable via bottom sheet, indicateur signature démo activable/désactivable et brouillon local autosauvegardé toutes les 3 s par conversation sont implémentés et vérifiés. L'invariant `1 brouillon par compte + conversation` est protégé par scope API et index unique SQLite ; l'UI bloque l'envoi pendant une autosave en vol pour éviter la résurrection de brouillons. Signature provider réelle, CC, nouveau message modal, PJ et vrai envoi provider restent à faire.
 
 ### 8. Fiche contact
 

@@ -148,10 +148,160 @@ class SendMessageInput(BaseModel):
 # -------- Drafts / send — Sprint 3 --------
 
 
-@router.post("/drafts", response_model=Draft)
+def _draft_row_to_model(row: dict[str, Any]) -> Draft:
+    return Draft(
+        id=row["id"],
+        account_id=row["account_id"],
+        contact_id=row.get("contact_id"),
+        in_reply_to=row.get("in_reply_to"),
+        to_emails=json.loads(row.get("to_emails") or "[]"),
+        cc_emails=json.loads(row.get("cc_emails") or "[]"),
+        subject=row.get("subject"),
+        body_text=row.get("body_text") or "",
+        signature_active=bool(row.get("signature_active", 1)),
+    )
+
+
+def _existing_draft_id(
+    conn: Any,
+    *,
+    account_id: str,
+    contact_id: str | None,
+) -> str | None:
+    row = conn.execute(
+        """
+        SELECT id FROM drafts
+        WHERE account_id = ?
+          AND COALESCE(contact_id, '') = COALESCE(?, '')
+        ORDER BY updated_at DESC
+        LIMIT 1
+        """,
+        (account_id, contact_id),
+    ).fetchone()
+    return row["id"] if row else None
+
+
+def _validate_draft_scope(conn: Any, draft: Draft) -> None:
+    if draft.contact_id:
+        contact = conn.execute(
+            "SELECT id, account_id, email FROM contacts WHERE id = ?",
+            (draft.contact_id,),
+        ).fetchone()
+        if not contact:
+            raise HTTPException(404, "contact introuvable")
+        if contact["account_id"] != draft.account_id:
+            raise HTTPException(400, "account_id ne correspond pas au contact")
+    account = conn.execute("SELECT id FROM accounts WHERE id = ?", (draft.account_id,)).fetchone()
+    if not account:
+        raise HTTPException(404, "account introuvable")
+
+
+@router.get("/drafts", response_model=Draft | None, summary="Brouillon local d'une conversation")
+def get_draft(
+    account_id: str,
+    contact_id: str | None = None,
+) -> Draft | None:
+    """Retourne le brouillon local courant, s'il existe.
+
+    Le MVP conserve un seul brouillon par conversation et par compte. La clef
+    logique est account_id + contact_id ; cela évite les fuites entre comptes.
+    """
+    with get_conn() as conn:
+        draft_id = _existing_draft_id(
+            conn,
+            account_id=account_id,
+            contact_id=contact_id,
+        )
+        if not draft_id:
+            return None
+        row = conn.execute(
+            """
+            SELECT id, account_id, contact_id, in_reply_to, to_emails, cc_emails,
+                   subject, body_text, signature_active
+            FROM drafts WHERE id = ?
+            """,
+            (draft_id,),
+        ).fetchone()
+    return _draft_row_to_model(dict(row)) if row else None
+
+
+@router.post("/drafts", response_model=Draft, summary="Sauvegarder un brouillon local")
 def save_draft(draft: Draft) -> Draft:
-    """Sprint 3 . BE — upsert brouillon avec deduplication par id."""
-    raise HTTPException(501, "Sprint 3 — to implement")
+    """Upsert d'un brouillon local avec un seul brouillon par conversation."""
+    if settings.mode != "local":
+        raise HTTPException(501, "brouillons provider non implémentés hors mode local")
+    with get_conn() as conn:
+        _validate_draft_scope(conn, draft)
+        # Le serveur ignore tout id fourni par le client : l'invariant MVP est
+        # un seul brouillon par compte + conversation, pas un document libre.
+        # L'index unique DB `idx_drafts_account_contact_unique` protège aussi
+        # les écritures concurrentes ; on ne dépend donc pas d'un SELECT préalable.
+        draft_id = f"draft-{uuid.uuid4().hex}"
+        now = int(time.time())
+        conn.execute(
+            """
+            INSERT INTO drafts(
+                id, account_id, contact_id, in_reply_to, to_emails, cc_emails,
+                subject, body_text, signature_active, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT DO UPDATE SET
+                in_reply_to = excluded.in_reply_to,
+                to_emails = excluded.to_emails,
+                cc_emails = excluded.cc_emails,
+                subject = excluded.subject,
+                body_text = excluded.body_text,
+                signature_active = excluded.signature_active,
+                updated_at = excluded.updated_at
+            """,
+            (
+                draft_id,
+                draft.account_id,
+                draft.contact_id,
+                draft.in_reply_to,
+                json.dumps([str(email) for email in draft.to_emails]),
+                json.dumps([str(email) for email in draft.cc_emails]),
+                draft.subject,
+                draft.body_text,
+                1 if draft.signature_active else 0,
+                now,
+            ),
+        )
+        conn.commit()
+        row = conn.execute(
+            """
+            SELECT id, account_id, contact_id, in_reply_to, to_emails, cc_emails,
+                   subject, body_text, signature_active
+            FROM drafts
+            WHERE account_id = ?
+              AND COALESCE(contact_id, '') = COALESCE(?, '')
+            ORDER BY updated_at DESC
+            LIMIT 1
+            """,
+            (draft.account_id, draft.contact_id),
+        ).fetchone()
+    return _draft_row_to_model(dict(row))
+
+
+@router.delete("/drafts/{draft_id}", summary="Supprimer un brouillon local")
+def delete_draft(
+    draft_id: str,
+    account_id: str,
+    contact_id: str | None = None,
+) -> dict[str, object]:
+    with get_conn() as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM drafts
+            WHERE id = ?
+              AND account_id = ?
+              AND COALESCE(contact_id, '') = COALESCE(?, '')
+            """,
+            (draft_id, account_id, contact_id),
+        )
+        conn.commit()
+    if cur.rowcount == 0:
+        raise HTTPException(404, "brouillon introuvable")
+    return {"ok": True, "deleted": True, "draft_id": draft_id}
 
 
 @router.post("/send", response_model=MessageItem, summary="Envoyer un message")

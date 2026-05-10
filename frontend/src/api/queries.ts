@@ -1,6 +1,6 @@
 /** TanStack Query hooks pour les endpoints PLI. */
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, post } from "./client";
+import { del, get, post } from "./client";
 
 export type FilterKind = "humans" | "notifs" | "unread" | "attachments" | "all";
 
@@ -63,12 +63,25 @@ export interface Attachment {
 
 export interface Contact {
   id: string;
+  account_id: string;
   email: string;
   display_name: string | null;
   company: string | null;
   role: string | null;
   notes: string | null;
   attachments: Attachment[];
+}
+
+export interface Draft {
+  id: string | null;
+  account_id: string;
+  contact_id: string | null;
+  in_reply_to: string | null;
+  to_emails: string[];
+  cc_emails: string[];
+  subject: string | null;
+  body_text: string;
+  signature_active: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -119,6 +132,18 @@ export const useContact = (contactId: string | null) =>
     enabled: !!contactId,
   });
 
+export const useDraft = (accountId: string | null, contactId: string | null) =>
+  useQuery({
+    queryKey: ["draft", accountId, contactId],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (accountId) params.set("account_id", accountId);
+      if (contactId) params.set("contact_id", contactId);
+      return get<Draft | null>(`/messages/drafts?${params.toString()}`);
+    },
+    enabled: !!accountId && !!contactId,
+  });
+
 /* ------------------------------------------------------------------ */
 /* Mutations                                                          */
 /* ------------------------------------------------------------------ */
@@ -146,11 +171,35 @@ export const useConversationActionMutation = () => {
 export const useSendMessage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { contact_id: string; body: string; subject?: string }) =>
+    mutationFn: (payload: { contact_id: string; body: string; subject?: string; account_id?: string }) =>
       post<Message>("/messages/send", payload),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["messages", variables.contact_id] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+};
+
+export const useSaveDraft = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Omit<Draft, "id" | "in_reply_to" | "to_emails" | "cc_emails">) =>
+      post<Draft>("/messages/drafts", payload),
+    onSuccess: (draft) => {
+      qc.setQueryData(["draft", draft.account_id, draft.contact_id], draft);
+    },
+  });
+};
+
+export const useDeleteDraft = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, accountId, contactId }: { id: string; accountId: string; contactId: string }) => {
+      const params = new URLSearchParams({ account_id: accountId, contact_id: contactId });
+      return del<Record<string, unknown>>(`/messages/drafts/${id}?${params.toString()}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["draft"] });
     },
   });
 };

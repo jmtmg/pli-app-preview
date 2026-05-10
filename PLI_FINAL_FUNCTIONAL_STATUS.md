@@ -25,6 +25,23 @@ Nouvelle tranche implémentée et vérifiée :
 
 Commandes vérifiées pour cette tranche : `make test` (`103 passed, 3 skipped` backend ; `16 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets.
 
+## Addendum W1 — brouillons locaux et sujet éditable
+
+Date : 2026-05-10 CEST
+
+Nouvelle tranche implémentée et vérifiée :
+
+- API locale de brouillons : `GET /messages/drafts`, `POST /messages/drafts`, `DELETE /messages/drafts/{id}` ;
+- un seul brouillon par compte + conversation, avec garde anti-fuite `account_id` / `contact_id` et index unique SQLite pour protéger aussi les écritures concurrentes ;
+- composer mobile : sujet `RE:` déduit du dernier sujet, éditable via bottom sheet ;
+- autosauvegarde locale toutes les 3 secondes quand le corps ou le sujet édité change, avec garde de génération pour éviter les sauvegardes obsolètes ;
+- reprise du brouillon à la réouverture de la conversation ;
+- toggle signature démo activable/désactivable (indicateur MVP, pas encore signature provider réelle) ;
+- suppression du brouillon après envoi local simulé, avec suppression scopée au compte/contact et envoi bloqué pendant une sauvegarde en vol ;
+- Makefile MVP mis à jour pour inclure `tests/test_drafts.py` dans `make test` et `make lint`.
+
+Commandes vérifiées pour cette tranche : `make test` (`107 passed, 3 skipped` backend ; `22 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`. Smoke runtime : backend `/health` OK, sauvegarde/lecture/suppression HTTP des brouillons OK, doublon client concurrent protégé côté DB, navigateur sans erreur console.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
@@ -35,6 +52,8 @@ Ce qui est terminé et vérifié :
 - frontend React/Vite MVP buildable et servable ;
 - design Cowork pris en compte via `PLI_DESIGN_SOURCE_OF_TRUTH.md` et première passe UI alignée mobile-first ;
 - recherche globale frontend câblée sur `/search`, limitée au compte actif, avec modal mobile, raccourci `Cmd/Ctrl+K`, résultats contacts/messages/PJ et highlight ;
+- swipe bilatéral + bottom sheet actions rapides implémentés pour Épingler/Non lu/Silence/Archiver ;
+- composer enrichi MVP : sujet `RE:` éditable via bottom sheet, signature démo toggle, brouillon local autosauvegardé toutes les 3 secondes et repris par conversation ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;
@@ -57,8 +76,8 @@ cd frontend && npm run build
 Résultats :
 
 - `make test` :
-  - backend MVP : `98 passed, 3 skipped in 0.65s` ;
-  - frontend Vitest : `1 passed`, `6 tests passed`.
+  - backend MVP : `107 passed, 3 skipped` ;
+  - frontend Vitest : `4 files passed`, `22 tests passed`.
 - `make lint` :
   - backend ruff : `All checks passed!` ;
   - frontend : `eslint . && tsc --noEmit` OK, sans warning final.
@@ -67,7 +86,7 @@ Résultats :
   - frontend TypeScript : `tsc --noEmit` OK.
 - `cd frontend && npm run build` :
   - `vite v5.4.21` ;
-  - `93 modules transformed` ;
+  - `104 modules transformed` ;
   - PWA générée (`dist/sw.js`, `dist/workbox-9c191d2f.js`).
 
 ## Smoke local vérifié

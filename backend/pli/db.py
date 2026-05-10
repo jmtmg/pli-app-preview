@@ -75,6 +75,36 @@ def _migrate_local_schema(conn: sqlite3.Connection) -> None:
             "ALTER TABLE contacts ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0"
         )
 
+    # Brouillons locaux : l'invariant produit est un seul brouillon courant par
+    # compte + conversation. Les anciennes DB démo peuvent avoir reçu plusieurs
+    # lignes avant cette migration ; on conserve la plus récente avant de poser
+    # l'index unique non destructif pour les démarrages suivants.
+    conn.execute(
+        """
+        DELETE FROM drafts
+        WHERE rowid NOT IN (
+            SELECT keep_rowid FROM (
+                SELECT d1.rowid AS keep_rowid
+                FROM drafts d1
+                WHERE d1.rowid = (
+                    SELECT d2.rowid
+                    FROM drafts d2
+                    WHERE d2.account_id = d1.account_id
+                      AND COALESCE(d2.contact_id, '') = COALESCE(d1.contact_id, '')
+                    ORDER BY d2.updated_at DESC, d2.rowid DESC
+                    LIMIT 1
+                )
+            )
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_drafts_account_contact_unique
+        ON drafts(account_id, COALESCE(contact_id, ''))
+        """
+    )
+
 
 def init_db() -> None:
     """Dispatcher d'initialisation appelé au lifespan FastAPI.
