@@ -198,13 +198,23 @@ export const useConversationActionMutation = () => {
   });
 };
 
+export interface SendMessagePayload {
+  contact_id?: string;
+  to_email?: string;
+  body: string;
+  subject?: string;
+  account_id?: string;
+}
+
 export const useSendMessage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { contact_id: string; body: string; subject?: string; account_id?: string }) =>
+    mutationFn: (payload: SendMessagePayload) =>
       post<Message>("/messages/send", payload),
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ["messages", variables.contact_id] });
+    onSuccess: (sent, variables) => {
+      if (variables.contact_id) qc.invalidateQueries({ queryKey: ["messages", variables.contact_id] });
+      qc.invalidateQueries({ queryKey: ["messages", sent.contact_id] });
+      qc.invalidateQueries({ queryKey: ["contact", sent.contact_id] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
     },
   });

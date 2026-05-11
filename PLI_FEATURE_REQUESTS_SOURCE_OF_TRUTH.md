@@ -130,7 +130,7 @@ Sources principales :
 - PJ au composer : trombone, sélecteur natif, tuiles preview, retrait, limite 25 Mo, plusieurs PJ.
 - Envoi via Gmail API ou Microsoft Graph.
 
-État MVP local actuel : composer local et envoi simulé OK ; sujet `RE:` éditable via bottom sheet, indicateur signature démo activable/désactivable et brouillon local autosauvegardé toutes les 3 s par conversation sont implémentés et vérifiés. L'invariant `1 brouillon par compte + conversation` est protégé par scope API et index unique SQLite ; l'UI bloque l'envoi pendant une autosave en vol pour éviter la résurrection de brouillons. Signature provider réelle, CC, nouveau message modal, PJ et vrai envoi provider restent à faire.
+État MVP local actuel : composer local et envoi simulé OK ; sujet `RE:` éditable via bottom sheet, indicateur signature démo activable/désactivable et brouillon local autosauvegardé toutes les 3 s par conversation sont implémentés et vérifiés. Le modal nouveau message local est câblé avec `De`, `À`, `Sujet`, `Corps`, suggestions contacts et création/réutilisation de contact local par email. L'invariant `1 brouillon par compte + conversation` est protégé par scope API et index unique SQLite ; l'UI bloque l'envoi pendant une autosave en vol pour éviter la résurrection de brouillons. Signature provider réelle, CC, PJ et vrai envoi provider restent à faire.
 
 ### 8. Fiche contact
 

@@ -25,11 +25,12 @@ import uuid
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, model_validator
 
 from ..config import settings
 from ..db import get_conn
 from ..models import Draft
+from ..sync.parser import normalize_email
 
 router = APIRouter()
 
@@ -137,12 +138,24 @@ class SendMessageInput(BaseModel):
 
     In local/demo mode this creates a local outgoing message. Real provider send
     remains a later provider-specific implementation.
+
+    `contact_id` is used for replies/existing conversations. `to_email` +
+    `account_id` powers the new-message modal and creates/reuses a local contact.
     """
 
-    contact_id: str
+    contact_id: str | None = None
+    to_email: EmailStr | None = None
     body: str
     subject: str | None = None
     account_id: str | None = None
+
+    @model_validator(mode="after")
+    def recipient_required(self) -> SendMessageInput:
+        if not self.contact_id and not self.to_email:
+            raise ValueError("contact_id ou to_email requis")
+        if self.to_email and not self.account_id:
+            raise ValueError("account_id requis pour un nouveau destinataire")
+        return self
 
 
 # -------- Drafts / send — Sprint 3 --------
@@ -194,6 +207,70 @@ def _validate_draft_scope(conn: Any, draft: Draft) -> None:
     account = conn.execute("SELECT id FROM accounts WHERE id = ?", (draft.account_id,)).fetchone()
     if not account:
         raise HTTPException(404, "account introuvable")
+
+
+def _resolve_send_contact(conn: Any, payload: SendMessageInput, now: int) -> Any:
+    """Return the target contact row for reply or local new-message send."""
+    if payload.contact_id:
+        contact = conn.execute(
+            """
+            SELECT c.id, c.account_id, c.email, c.display_name, a.email AS account_email
+            FROM contacts c
+            JOIN accounts a ON a.id = c.account_id
+            WHERE c.id = ?
+            """,
+            (payload.contact_id,),
+        ).fetchone()
+        if not contact:
+            raise HTTPException(404, "contact introuvable")
+        account_id = payload.account_id or contact["account_id"]
+        if account_id != contact["account_id"]:
+            raise HTTPException(400, "account_id ne correspond pas au contact")
+        return contact
+
+    assert payload.account_id is not None
+    assert payload.to_email is not None
+    account = conn.execute(
+        "SELECT id, email FROM accounts WHERE id = ?",
+        (payload.account_id,),
+    ).fetchone()
+    if not account:
+        raise HTTPException(404, "account introuvable")
+
+    recipient_email = str(payload.to_email).strip()
+    normalized = normalize_email(recipient_email)
+    contact = conn.execute(
+        """
+        SELECT c.id, c.account_id, c.email, c.display_name, a.email AS account_email
+        FROM contacts c
+        JOIN accounts a ON a.id = c.account_id
+        WHERE c.account_id = ? AND c.email_normalized = ?
+        """,
+        (payload.account_id, normalized),
+    ).fetchone()
+    if contact:
+        return contact
+
+    contact_id = f"local-contact-{uuid.uuid4().hex}"
+    local_part = recipient_email.split("@", 1)[0]
+    conn.execute(
+        """
+        INSERT INTO contacts(
+            id, account_id, email, email_normalized, display_name,
+            kind, last_msg_at, unread_count, has_attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, 'human', ?, 0, 0, ?)
+        """,
+        (contact_id, payload.account_id, recipient_email, normalized, local_part, now, now),
+    )
+    return conn.execute(
+        """
+        SELECT c.id, c.account_id, c.email, c.display_name, a.email AS account_email
+        FROM contacts c
+        JOIN accounts a ON a.id = c.account_id
+        WHERE c.id = ?
+        """,
+        (contact_id,),
+    ).fetchone()
 
 
 @router.get("/drafts", response_model=Draft | None, summary="Brouillon local d'une conversation")
@@ -320,20 +397,8 @@ async def send_message(payload: SendMessageInput) -> MessageItem:
     now = int(time.time())
     message_id = f"local-out-{uuid.uuid4().hex}"
     with get_conn() as conn:
-        contact = conn.execute(
-            """
-            SELECT c.id, c.account_id, c.email, c.display_name, a.email AS account_email
-            FROM contacts c
-            JOIN accounts a ON a.id = c.account_id
-            WHERE c.id = ?
-            """,
-            (payload.contact_id,),
-        ).fetchone()
-        if not contact:
-            raise HTTPException(404, "contact introuvable")
+        contact = _resolve_send_contact(conn, payload, now)
         account_id = payload.account_id or contact["account_id"]
-        if account_id != contact["account_id"]:
-            raise HTTPException(400, "account_id ne correspond pas au contact")
         conn.execute(
             """
             INSERT INTO messages(
@@ -346,9 +411,9 @@ async def send_message(payload: SendMessageInput) -> MessageItem:
             (
                 message_id,
                 account_id,
-                payload.contact_id,
+                contact["id"],
                 message_id,
-                f"local-thread-{payload.contact_id}",
+                f"local-thread-{contact['id']}",
                 payload.subject,
                 body[:240],
                 body,
@@ -361,7 +426,7 @@ async def send_message(payload: SendMessageInput) -> MessageItem:
         )
         conn.execute(
             "UPDATE contacts SET last_msg_at = ? WHERE id = ?",
-            (now, payload.contact_id),
+            (now, contact["id"]),
         )
         conn.commit()
         row = conn.execute(

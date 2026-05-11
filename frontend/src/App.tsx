@@ -4,6 +4,7 @@ import { ConversationPane } from "@/features/conversation/ConversationPane";
 import { Drawer } from "@/features/drawer/Drawer";
 import { ContactSheet } from "@/features/contact/ContactSheet";
 import { SearchModal } from "@/features/search/SearchModal";
+import { NewMessageModal } from "@/features/compose/NewMessageModal";
 import { useAccounts } from "@/api/queries";
 
 /**
@@ -21,16 +22,23 @@ export default function AppShell() {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [contactSheetOpen, setContactSheetOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [newMessageOpen, setNewMessageOpen] = useState(false);
   const { data: accounts } = useAccounts();
 
-  const activeAccountId = accounts?.find((account) => account.is_active)?.id ?? accounts?.[0]?.id ?? null;
+  const activeAccount = accounts?.find((account) => account.is_active) ?? accounts?.[0] ?? null;
+  const activeAccountId = activeAccount?.id ?? null;
   const effectiveSearchAccountId = selectedAccountId ?? activeAccountId;
+  const effectiveComposeAccount = accounts?.find((account) => account.id === effectiveSearchAccountId) ?? activeAccount;
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setSearchOpen(true);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        setNewMessageOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -60,6 +68,7 @@ export default function AppShell() {
           }}
           onOpenDrawer={() => setDrawerOpen(true)}
           onOpenSearch={() => setSearchOpen(true)}
+          onOpenCompose={() => setNewMessageOpen(true)}
           selectedId={selectedContactId}
         />
       </div>
@@ -95,6 +104,17 @@ export default function AppShell() {
         onSelectContact={(target) => {
           setSelectedContactId(target.contactId);
           setSelectedMessageId(target.kind === "message" ? target.resultId : null);
+          setContactSheetOpen(false);
+        }}
+      />
+
+      <NewMessageModal
+        open={newMessageOpen}
+        account={effectiveComposeAccount}
+        onClose={() => setNewMessageOpen(false)}
+        onSent={(contactId) => {
+          setSelectedContactId(contactId);
+          setSelectedMessageId(null);
           setContactSheetOpen(false);
         }}
       />

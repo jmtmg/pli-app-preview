@@ -34,10 +34,11 @@ interface Props {
   onSelect: (id: string) => void;
   onOpenDrawer: () => void;
   onOpenSearch: () => void;
+  onOpenCompose: () => void;
   selectedId: string | null;
 }
 
-export function ConversationList({ accountId, onSelect, onOpenDrawer, onOpenSearch, selectedId }: Props) {
+export function ConversationList({ accountId, onSelect, onOpenDrawer, onOpenSearch, onOpenCompose, selectedId }: Props) {
   const [filter, setFilter] = useState<FilterKind>("humans");
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [sheetConversation, setSheetConversation] = useState<Conversation | null>(null);
@@ -115,7 +116,7 @@ export function ConversationList({ accountId, onSelect, onOpenDrawer, onOpenSear
       className="relative flex flex-col min-h-0 bg-bg border-r border-border"
       aria-busy={isLoading || undefined}
     >
-      <Header onOpenDrawer={onOpenDrawer} onOpenSearch={onOpenSearch} />
+      <Header onOpenDrawer={onOpenDrawer} onOpenSearch={onOpenSearch} onOpenCompose={onOpenCompose} />
       <FilterBar value={filter} onChange={setFilter} />
       <div
         data-scroll-container

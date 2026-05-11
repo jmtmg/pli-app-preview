@@ -57,6 +57,20 @@ Nouvelle tranche implémentée et vérifiée :
 
 Commandes vérifiées pour cette tranche : `make test` (`107 passed, 3 skipped` backend ; `28 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, smoke téléphone PATCH/readback sur contact démo, test FE `tel:` ciblé, `git diff --check`, scan diff secrets.
 
+## Addendum V1 — nouveau message modal local
+
+Date : 2026-05-11 CEST
+
+Nouvelle tranche en cours de vérification :
+
+- bouton crayon et raccourci `Cmd/Ctrl+N` ouvrent un modal `Nouveau message` ;
+- modal local avec champs `De`, `À`, `Sujet`, `Corps`, suggestions contacts et aide `Cmd/Ctrl + Enter` ;
+- `POST /messages/send` accepte désormais `to_email + account_id` en mode local, crée un contact local si nécessaire ou réutilise un contact existant via `email_normalized` ;
+- le message sortant reste marqué `local-out-*`, sans OAuth ni envoi provider réel ;
+- CC/PJ et envoi Gmail/Microsoft réel restent volontairement hors de cette tranche.
+
+Commandes vérifiées pour cette tranche : `make test` (`110 passed, 3 skipped` backend ; `35 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`. Smoke final téléphone/navigateur, `git diff --check`, scan secrets et revue finale à relancer avant commit.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
@@ -70,6 +84,7 @@ Ce qui est terminé et vérifié :
 - swipe bilatéral + bottom sheet actions rapides implémentés pour Épingler/Non lu/Silence/Archiver ;
 - composer enrichi MVP : sujet `RE:` éditable via bottom sheet, signature démo toggle, brouillon local autosauvegardé toutes les 3 secondes et repris par conversation ;
 - fiche contact complète MVP : avatar large, infos visibles, actions Appeler/Message/Archiver, édition locale via PATCH et grille PJ lisible ;
+- nouveau message modal local : `De`, `À`, `Sujet`, `Corps`, suggestions contacts, envoi local par contact existant ou nouveau destinataire email ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;

@@ -164,3 +164,83 @@ def test_mark_read_counter_never_negative(client) -> None:  # type: ignore[no-un
             "SELECT unread_count FROM contacts WHERE id = 'c-alice'"
         ).fetchone()
     assert cnt == 0
+
+
+# -------- new message modal / local send to recipient email --------
+
+
+def test_send_new_message_creates_local_contact_for_recipient_email(client) -> None:  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO accounts (id, provider, email, is_active, created_at) VALUES ('A', 'gmail', 'me@example.com', 1, ?)",
+            (int(time.time()),),
+        )
+        conn.commit()
+
+    r = client.post(
+        "/messages/send",
+        json={
+            "account_id": "A",
+            "to_email": "new.person@example.com",
+            "subject": "Nouveau sujet",
+            "body": "Bonjour depuis le nouveau message local",
+        },
+    )
+
+    assert r.status_code == 200, r.text
+    sent = r.json()
+    assert sent["direction"] == "out"
+    assert sent["subject"] == "Nouveau sujet"
+    assert sent["body_snippet"] == "Bonjour depuis le nouveau message local"
+    assert sent["contact_id"].startswith("local-contact-")
+
+    with get_conn() as conn:
+        contact = conn.execute(
+            "SELECT id, account_id, email, email_normalized, display_name, last_msg_at FROM contacts WHERE id = ?",
+            (sent["contact_id"],),
+        ).fetchone()
+        assert contact is not None
+        assert contact["account_id"] == "A"
+        assert contact["email"] == "new.person@example.com"
+        assert contact["email_normalized"] == "new.person@example.com"
+        assert contact["display_name"] == "new.person"
+        msg = conn.execute(
+            "SELECT to_emails, from_email, snippet FROM messages WHERE id = ?",
+            (sent["id"],),
+        ).fetchone()
+        assert msg["to_emails"] == '["new.person@example.com"]'
+        assert msg["from_email"] == "me@example.com"
+        assert msg["snippet"] == "Bonjour depuis le nouveau message local"
+
+
+def test_send_new_message_reuses_contact_by_normalized_email(client) -> None:  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    _seed_conv()
+    r = client.post(
+        "/messages/send",
+        json={
+            "account_id": "A",
+            "to_email": "Alice+tag@X.io",
+            "subject": "Ping nouveau",
+            "body": "Le contact existant doit être réutilisé.",
+        },
+    )
+
+    assert r.status_code == 200, r.text
+    assert r.json()["contact_id"] == "c-alice"
+    with get_conn() as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) AS n FROM contacts WHERE account_id = 'A' AND email_normalized = 'alice@x.io'"
+        ).fetchone()["n"]
+    assert count == 1
+
+
+def test_send_new_message_requires_account_for_recipient_email(client) -> None:  # type: ignore[no-untyped-def]
+    r = client.post(
+        "/messages/send",
+        json={"to_email": "someone@example.com", "subject": "Sans compte", "body": "body"},
+    )
+    assert r.status_code == 422

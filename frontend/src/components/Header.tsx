@@ -8,9 +8,10 @@
 interface Props {
   onOpenDrawer: () => void;
   onOpenSearch: () => void;
+  onOpenCompose: () => void;
 }
 
-export function Header({ onOpenDrawer, onOpenSearch }: Props) {
+export function Header({ onOpenDrawer, onOpenSearch, onOpenCompose }: Props) {
   return (
     <header
       className="px-2.5 border-b border-border flex items-center gap-1 bg-bg shrink-0"
@@ -47,6 +48,7 @@ export function Header({ onOpenDrawer, onOpenSearch }: Props) {
 
       <button
         type="button"
+        onClick={onOpenCompose}
         className="w-10 h-10 rounded-[10px] hover:bg-bg-e3 active:bg-bg-e2 flex items-center justify-center text-accent transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         aria-label="Nouveau message"
         title="Nouveau message (Cmd/Ctrl + N)"
