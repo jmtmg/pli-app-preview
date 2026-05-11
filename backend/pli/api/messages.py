@@ -25,7 +25,7 @@ import uuid
 from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict, EmailStr, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from ..config import settings
 from ..db import get_conn
@@ -33,6 +33,9 @@ from ..models import Draft
 from ..sync.parser import normalize_email
 
 router = APIRouter()
+
+MAX_LOCAL_ATTACHMENT_BYTES = 25 * 1024 * 1024
+MAX_LOCAL_ATTACHMENTS = 20
 
 
 class MessageItem(BaseModel):
@@ -133,6 +136,35 @@ def mark_read(message_id: str, read: bool = True) -> dict[str, object]:
     return {"ok": True, "message_id": message_id, "is_read": target, "changed": True}
 
 
+class LocalAttachmentInput(BaseModel):
+    """Metadata-only attachment selected in the local composer.
+
+    No file bytes are accepted here. The row stored in ``attachments`` keeps
+    only filename/type/size so the local UI can display chips and contact PJ
+    history without pretending a provider upload happened.
+    """
+
+    filename: str = Field(..., min_length=1, max_length=255)
+    mime_type: str | None = Field(default=None, max_length=200)
+    size_bytes: int | None = Field(default=None, ge=0, le=MAX_LOCAL_ATTACHMENT_BYTES)
+
+    @field_validator("filename")
+    @classmethod
+    def filename_must_not_be_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("filename vide")
+        return stripped
+
+    @field_validator("mime_type")
+    @classmethod
+    def empty_mime_type_to_none(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+
 class SendMessageInput(BaseModel):
     """Payload minimal used by the MVP composer.
 
@@ -148,6 +180,12 @@ class SendMessageInput(BaseModel):
     body: str
     subject: str | None = None
     account_id: str | None = None
+    cc_emails: list[EmailStr] = Field(default_factory=list)
+    bcc_emails: list[EmailStr] = Field(default_factory=list)
+    attachments: list[LocalAttachmentInput] = Field(
+        default_factory=list,
+        max_length=MAX_LOCAL_ATTACHMENTS,
+    )
 
     @model_validator(mode="after")
     def recipient_required(self) -> SendMessageInput:
@@ -271,6 +309,40 @@ def _resolve_send_contact(conn: Any, payload: SendMessageInput, now: int) -> Any
         """,
         (contact_id,),
     ).fetchone()
+
+
+def _json_email_list(emails: list[EmailStr]) -> str:
+    return json.dumps([str(email) for email in emails])
+
+
+def _store_local_attachment_metadata(
+    conn: Any,
+    *,
+    message_id: str,
+    contact_id: str,
+    attachments: list[LocalAttachmentInput],
+    now: int,
+) -> None:
+    for attachment in attachments:
+        attachment_id = f"local-att-{uuid.uuid4().hex}"
+        conn.execute(
+            """
+            INSERT INTO attachments(
+                id, message_id, contact_id, filename, mime_type,
+                size_bytes, provider_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                attachment_id,
+                message_id,
+                contact_id,
+                attachment.filename,
+                attachment.mime_type,
+                attachment.size_bytes,
+                attachment_id,
+                now,
+            ),
+        )
 
 
 @router.get("/drafts", response_model=Draft | None, summary="Brouillon local d'une conversation")
@@ -399,14 +471,15 @@ async def send_message(payload: SendMessageInput) -> MessageItem:
     with get_conn() as conn:
         contact = _resolve_send_contact(conn, payload, now)
         account_id = payload.account_id or contact["account_id"]
+        has_attachments = 1 if payload.attachments else 0
         conn.execute(
             """
             INSERT INTO messages(
                 id, account_id, contact_id, provider_id, thread_id, direction,
                 subject, snippet, body_text, body_html, from_email, from_name,
-                to_emails, cc_emails, received_at, is_read, is_starred,
+                to_emails, cc_emails, bcc_emails, received_at, is_read, is_starred,
                 has_attachments, raw_headers, created_at
-            ) VALUES (?, ?, ?, ?, ?, 'out', ?, ?, ?, NULL, ?, ?, ?, '[]', ?, 1, 0, 0, '', ?)
+            ) VALUES (?, ?, ?, ?, ?, 'out', ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 1, 0, ?, '', ?)
             """,
             (
                 message_id,
@@ -420,13 +493,28 @@ async def send_message(payload: SendMessageInput) -> MessageItem:
                 contact["account_email"],
                 "PLI local",
                 json.dumps([contact["email"]]),
+                _json_email_list(payload.cc_emails),
+                _json_email_list(payload.bcc_emails),
                 now,
+                has_attachments,
                 now,
             ),
         )
+        _store_local_attachment_metadata(
+            conn,
+            message_id=message_id,
+            contact_id=contact["id"],
+            attachments=payload.attachments,
+            now=now,
+        )
         conn.execute(
-            "UPDATE contacts SET last_msg_at = ? WHERE id = ?",
-            (now, contact["id"]),
+            """
+            UPDATE contacts
+            SET last_msg_at = ?,
+                has_attachments = CASE WHEN ? = 1 THEN 1 ELSE has_attachments END
+            WHERE id = ?
+            """,
+            (now, has_attachments, contact["id"]),
         )
         conn.commit()
         row = conn.execute(

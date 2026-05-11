@@ -1,10 +1,10 @@
 # PLI — statut final fonctionnel local
 
 Date : 2026-05-08 18:22 CEST
-Workspace : `/Users/jm/context-engine/projects/pli-app`
+Workspace : `/Users/jm/context-engine/worktrees/pli-app-codex-composer-local`
 Archive source préservée : `/Users/jm/context-engine/recovered/pli-cowork-complete-2026-05-08/source-surface/PLI-Archive-Complete/`
 Base de départ : `3051bef feat: add local functional MVP slice`
-Commit de cette tranche : `HEAD` (`chore: finalize PLI local functional status`; hash exact vérifié avec `git rev-parse --short HEAD` après commit)
+Commit de cette tranche courante : non créé dans ce sandbox ; `git add` ne peut pas écrire l’index du worktree situé sous `/Users/jm/context-engine/projects/pli-app/.git/worktrees/pli-app-codex-composer-local/` (`Operation not permitted`). Les changements sont laissés non commités.
 
 ## Verdict
 
@@ -61,15 +61,18 @@ Commandes vérifiées pour cette tranche : `make test` (`107 passed, 3 skipped` 
 
 Date : 2026-05-11 CEST
 
-Nouvelle tranche en cours de vérification :
+Nouvelle tranche implémentée et vérifiée :
 
 - bouton crayon et raccourci `Cmd/Ctrl+N` ouvrent un modal `Nouveau message` ;
-- modal local avec champs `De`, `À`, `Sujet`, `Corps`, suggestions contacts et aide `Cmd/Ctrl + Enter` ;
+- modal local avec champs `De`, `À`, `Cc`, `Cci`, `Sujet`, `Corps`, suggestions contacts et aide `Cmd/Ctrl + Enter` ;
+- champs avancés `Cc/Cci` repliables, validation frontend des listes email et validation backend Pydantic via `EmailStr` ;
+- pièces jointes locales MVP dans le modal : sélection native multi-fichiers, chips nom/taille, validation 25 Mo par fichier et retrait côté UI ;
+- backend local accepte uniquement des métadonnées de pièces jointes (`filename`, `mime_type`, `size_bytes`) et les persiste dans `attachments` sans `sha256`, sans `local_path` et sans contenu fichier ;
 - `POST /messages/send` accepte désormais `to_email + account_id` en mode local, crée un contact local si nécessaire ou réutilise un contact existant via `email_normalized` ;
-- le message sortant reste marqué `local-out-*`, sans OAuth ni envoi provider réel ;
-- CC/PJ et envoi Gmail/Microsoft réel restent volontairement hors de cette tranche.
+- `POST /messages/send` accepte aussi `cc_emails`, `bcc_emails` et `attachments` ; les CCI sont stockées localement mais restent absentes des projections publiques de messages ;
+- le message sortant reste marqué `local-out-*`, sans OAuth, sans upload provider et sans envoi Gmail/Microsoft réel.
 
-Commandes vérifiées pour cette tranche : `make test` (`110 passed, 3 skipped` backend ; `35 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`. Smoke final téléphone/navigateur, `git diff --check`, scan secrets et revue finale à relancer avant commit.
+Commandes vérifiées pour cette tranche : `make test` (`112 passed, 3 skipped` backend ; `39 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets. Smoke local : `/health`, seed démo et `POST /messages/send` avec CC/CCI/PJ métadonnées validés sans contenu fichier.
 
 Ce qui est terminé et vérifié :
 
@@ -84,20 +87,21 @@ Ce qui est terminé et vérifié :
 - swipe bilatéral + bottom sheet actions rapides implémentés pour Épingler/Non lu/Silence/Archiver ;
 - composer enrichi MVP : sujet `RE:` éditable via bottom sheet, signature démo toggle, brouillon local autosauvegardé toutes les 3 secondes et repris par conversation ;
 - fiche contact complète MVP : avatar large, infos visibles, actions Appeler/Message/Archiver, édition locale via PATCH et grille PJ lisible ;
-- nouveau message modal local : `De`, `À`, `Sujet`, `Corps`, suggestions contacts, envoi local par contact existant ou nouveau destinataire email ;
+- nouveau message modal local : `De`, `À`, `Cc`, `Cci`, `Sujet`, `Corps`, suggestions contacts, pièces jointes en métadonnées locales, envoi local par contact existant ou nouveau destinataire email ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;
+- `make typecheck` utilise une config `backend/mypy-mvp.ini` pour garder le gate MVP strict sur les fichiers actifs sans faire échouer la tranche sur les imports M2-M4 historiques ;
 - strates backend futures M2-M4 isolées par commandes explicites (`test-be-future`, `typecheck-future`) et documentées.
 
-Ce qui n’est **pas** terminé : `make test-be-all`, `make typecheck-all`, OAuth réel Gmail/Microsoft, Stripe/billing réel, RGPD/OCR/beta complets. Ces éléments sont bloqués par une décision d’architecture DB/session et/ou par des flows officiels/secrets à fournir. Je ne les déclare donc pas « finis ».
+Ce qui n’est **pas** terminé : `make test-be-all`, `make typecheck-all`, OAuth réel Gmail/Microsoft, upload/envoi provider réel des pièces jointes, previews natives de PJ, Stripe/billing réel, RGPD/OCR/beta complets. Ces éléments sont bloqués par une décision d’architecture DB/session et/ou par des flows officiels/secrets à fournir. Je ne les déclare donc pas « finis ».
 
 ## Commandes vérifiées OK
 
 Toutes les commandes ci-dessous ont été relancées après les modifications finales.
 
 ```bash
-cd /Users/jm/context-engine/projects/pli-app
+cd /Users/jm/context-engine/worktrees/pli-app-codex-composer-local
 make test
 make lint
 make typecheck
@@ -107,8 +111,8 @@ cd frontend && npm run build
 Résultats :
 
 - `make test` :
-  - backend MVP : `107 passed, 3 skipped` ;
-  - frontend Vitest : `4 files passed`, `22 tests passed`.
+  - backend MVP : `112 passed, 3 skipped` ;
+  - frontend Vitest : `7 files passed`, `39 tests passed`.
 - `make lint` :
   - backend ruff : `All checks passed!` ;
   - frontend : `eslint . && tsc --noEmit` OK, sans warning final.
@@ -117,39 +121,26 @@ Résultats :
   - frontend TypeScript : `tsc --noEmit` OK.
 - `cd frontend && npm run build` :
   - `vite v5.4.21` ;
-  - `104 modules transformed` ;
+  - `106 modules transformed` ;
   - PWA générée (`dist/sw.js`, `dist/workbox-9c191d2f.js`).
 
 ## Smoke local vérifié
 
 ### Backend
 
-Serveur temporaire lancé sur `127.0.0.1:18080` avec :
-
-```bash
-PLI_DEMO=true
-PLI_DB_PATH=/Users/jm/context-engine/projects/pli-app/.diagnostics/backend/smoke-final.sqlite
-PLI_ATTACHMENTS_DIR=/Users/jm/context-engine/projects/pli-app/.diagnostics/backend/smoke-final-att
-backend/.venv/bin/python -m uvicorn pli.main:app --host 127.0.0.1 --port 18080
-```
+Le bind HTTP `127.0.0.1:18080` est refusé dans ce sandbox (`operation not permitted`). Le smoke runtime a donc été exécuté via `FastAPI TestClient`, en important explicitement le code du worktree avec `PYTHONPATH=backend`, sur une base SQLite temporaire sous `.diagnostics/backend/`.
 
 Endpoints validés :
 
 - `GET /health` → HTTP 200, `status: ok`, `mode: local`, `accounts: 1` ;
 - `POST /demo/seed?reset=true` → HTTP 200, `accounts: 1`, `contacts: 4`, `messages: 5`, `attachments: 1` ;
-- `GET /accounts` → HTTP 200, 1 compte `demo-account-gmail` ;
-- `GET /conversations?filter=all` → HTTP 200, 4 conversations, dont `test.pli@demo-pli.com` ;
-- `GET /messages/by-contact/demo-contact-alice` → HTTP 200, 2 messages seedés ;
-- `POST /messages/send` → HTTP 200, message sortant local `local-out-*` créé.
+- `POST /messages/send` avec `to_email`, `cc_emails`, `bcc_emails` et une pièce jointe metadata → HTTP 200, message sortant local `local-out-*`, `has_attachments: true` ;
+- vérification SQLite : `cc_emails` et `bcc_emails` persistés, `attachments.filename/size_bytes` persistés, `sha256` et `local_path` restent `NULL` ;
+- vérification projection publique : aucune adresse CCI et aucun champ `bcc` dans la réponse JSON de `/messages/send`.
 
 ### Frontend
 
-Preview temporaire lancé sur `127.0.0.1:18081` après build :
-
-- `GET /` → HTTP 200 ;
-- HTML contient `PLI` et les assets Vite (`/assets/...`).
-
-Les serveurs temporaires ont été stoppés. Les ports `18080` et `18081` ne sont plus en écoute.
+Runtime navigateur non relancé dans ce sandbox faute de port local disponible ; le build Vite/PWA est vérifié et les tests React/Vitest du modal couvrent le rendu `Cc/Cci`, chips de pièces jointes, validation et désactivation de l’envoi.
 
 ## Design Cowork pris en compte
 
@@ -163,7 +154,7 @@ Elle synthétise les demandes et artefacts Cowork vérifiés :
 
 Première passe appliquée au frontend React : header mobile 52 px, chrome minimal, bouton menu + compte + recherche + composer, composer inline plus proche wireframe avec trombone/champ/bouton rond, sujet discret `↳`, suppression d’un email personnel de démonstration dans l’UI, tokens action/motion alignés.
 
-Écarts UI restants volontairement visibles : long-press drag-and-drop des épinglées, drawer desktop persistant, extraction signature réelle et nouveau message complet.
+Écarts UI restants volontairement visibles : long-press drag-and-drop des épinglées, drawer desktop persistant, extraction signature réelle, previews natives de PJ et upload/envoi provider réel.
 
 ## Qualité frontend / audit npm
 
@@ -217,7 +208,7 @@ Diagnostic détaillé : `docs/diagnostics/2026-05-08-full-suite-stratification.m
 Depuis la racine :
 
 ```bash
-cd /Users/jm/context-engine/projects/pli-app
+cd /Users/jm/context-engine/worktrees/pli-app-codex-composer-local
 make demo
 ```
 

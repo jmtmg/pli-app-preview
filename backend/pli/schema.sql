@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS messages (
     from_name       TEXT,
     to_emails       TEXT,                           -- JSON array
     cc_emails       TEXT,                           -- JSON array
+    bcc_emails      TEXT,                           -- JSON array local only, never returned in public projections
     received_at     INTEGER NOT NULL,
     is_read         INTEGER NOT NULL DEFAULT 0,
     is_starred      INTEGER NOT NULL DEFAULT 0,

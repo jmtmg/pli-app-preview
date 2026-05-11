@@ -149,7 +149,7 @@ lint-fe:
 	cd frontend && npm run lint
 
 typecheck:
-	cd backend && $(BACKEND_PY) -m mypy $(BACKEND_MVP_TYPECHECK_TARGETS)
+	cd backend && $(BACKEND_PY) -m mypy --config-file mypy-mvp.ini $(BACKEND_MVP_TYPECHECK_TARGETS)
 	cd frontend && npm run type-check
 
 typecheck-all:

@@ -75,6 +75,12 @@ def _migrate_local_schema(conn: sqlite3.Connection) -> None:
             "ALTER TABLE contacts ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0"
         )
 
+    message_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(messages)").fetchall()
+    }
+    if "bcc_emails" not in message_columns:
+        conn.execute("ALTER TABLE messages ADD COLUMN bcc_emails TEXT")
+
     # Brouillons locaux : l'invariant produit est un seul brouillon courant par
     # compte + conversation. Les anciennes DB démo peuvent avoir reçu plusieurs
     # lignes avant cette migration ; on conserve la plus récente avant de poser

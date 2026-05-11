@@ -201,9 +201,16 @@ export const useConversationActionMutation = () => {
 export interface SendMessagePayload {
   contact_id?: string;
   to_email?: string;
+  cc_emails?: string[];
+  bcc_emails?: string[];
   body: string;
   subject?: string;
   account_id?: string;
+  attachments?: {
+    filename: string;
+    mime_type?: string;
+    size_bytes: number;
+  }[];
 }
 
 export const useSendMessage = () => {

@@ -41,13 +41,20 @@ describe("NewMessageModalView", () => {
         conversations={CONVERSATIONS}
         selectedContactId={null}
         toEmail="ali"
+        ccEmails=""
+        bccEmails=""
         subject="Point v1"
         body="Bonjour"
+        attachments={[]}
+        advancedOpen={false}
         isSending={false}
         errorMessage={null}
         onClose={vi.fn()}
         onFieldChange={vi.fn()}
         onSelectRecipient={vi.fn()}
+        onToggleAdvanced={vi.fn()}
+        onFilesSelected={vi.fn()}
+        onRemoveAttachment={vi.fn()}
         onSubmit={vi.fn()}
       />,
     );
@@ -56,6 +63,7 @@ describe("NewMessageModalView", () => {
     expect(html).toContain("De");
     expect(html).toContain("demo@pli-app.fr");
     expect(html).toContain("À");
+    expect(html).toContain("Cc/Cci");
     expect(html).toContain("Sujet");
     expect(html).toContain("Corps");
     expect(html).toContain("Alice Martin — alice.martin@example.com");
@@ -71,18 +79,66 @@ describe("NewMessageModalView", () => {
         conversations={CONVERSATIONS}
         selectedContactId={null}
         toEmail="not-an-email"
+        ccEmails=""
+        bccEmails=""
         subject=""
         body=""
+        attachments={[]}
+        advancedOpen={false}
         isSending={false}
         errorMessage={null}
         onClose={vi.fn()}
         onFieldChange={vi.fn()}
         onSelectRecipient={vi.fn()}
+        onToggleAdvanced={vi.fn()}
+        onFilesSelected={vi.fn()}
+        onRemoveAttachment={vi.fn()}
         onSubmit={vi.fn()}
       />,
     );
 
     expect(html).toContain("disabled=\"\"");
     expect(html).toContain("Saisis une adresse email valide et un message.");
+  });
+
+  it("rend les champs CC/CCI et les chips de pièces jointes quand les options sont ouvertes", () => {
+    const html = renderToStaticMarkup(
+      <NewMessageModalView
+        open
+        account={ACCOUNT}
+        conversations={CONVERSATIONS}
+        selectedContactId={null}
+        toEmail="alice.martin@example.com"
+        ccEmails="copy@example.com"
+        bccEmails="hidden@example.com"
+        subject="Point v1"
+        body="Bonjour"
+        attachments={[
+          {
+            id: "att-1",
+            name: "brief.pdf",
+            type: "application/pdf",
+            size: 12_345,
+          },
+        ]}
+        advancedOpen
+        isSending={false}
+        errorMessage={null}
+        onClose={vi.fn()}
+        onFieldChange={vi.fn()}
+        onSelectRecipient={vi.fn()}
+        onToggleAdvanced={vi.fn()}
+        onFilesSelected={vi.fn()}
+        onRemoveAttachment={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Cc");
+    expect(html).toContain("Cci");
+    expect(html).toContain("copy@example.com");
+    expect(html).toContain("hidden@example.com");
+    expect(html).toContain("brief.pdf");
+    expect(html).toContain("12 Ko");
   });
 });

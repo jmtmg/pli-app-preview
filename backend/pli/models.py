@@ -68,6 +68,7 @@ class Message(BaseModel):
     from_name: str | None = None
     to_emails: list[EmailStr] = Field(default_factory=list)
     cc_emails: list[EmailStr] = Field(default_factory=list)
+    bcc_emails: list[EmailStr] = Field(default_factory=list)
     received_at: datetime
     is_read: bool = False
     has_attachments: bool = False

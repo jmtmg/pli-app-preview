@@ -78,8 +78,9 @@ def test_messages_by_contact_projection_no_secrets(client) -> None:  # type: ign
     r = client.get("/messages/by-contact/c-alice")
     text = r.text
     assert "SECRET-HEADERS" not in text
+    assert "bcc" not in text.lower()
     item = r.json()[0]
-    for forbidden in ("provider_id", "raw_headers", "body_html", "body_text", "account_id"):
+    for forbidden in ("provider_id", "raw_headers", "body_html", "body_text", "account_id", "bcc_emails"):
         assert forbidden not in item, f"champ sensible expose : {forbidden}"
 
 
@@ -244,3 +245,119 @@ def test_send_new_message_requires_account_for_recipient_email(client) -> None: 
         json={"to_email": "someone@example.com", "subject": "Sans compte", "body": "body"},
     )
     assert r.status_code == 422
+
+
+def test_send_new_message_persists_cc_bcc_and_attachment_metadata_without_content(client) -> None:  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO accounts (id, provider, email, is_active, created_at) VALUES ('A', 'gmail', 'me@example.com', 1, ?)",
+            (int(time.time()),),
+        )
+        conn.commit()
+
+    r = client.post(
+        "/messages/send",
+        json={
+            "account_id": "A",
+            "to_email": "new.person@example.com",
+            "cc_emails": ["copy@example.com"],
+            "bcc_emails": ["hidden@example.com"],
+            "subject": "Avec copies et PJ",
+            "body": "Voici les métadonnées locales.",
+            "attachments": [
+                {
+                    "filename": "brief.pdf",
+                    "mime_type": "application/pdf",
+                    "size_bytes": 12_345,
+                },
+                {
+                    "filename": "notes.txt",
+                    "mime_type": "text/plain",
+                    "size_bytes": 512,
+                },
+            ],
+        },
+    )
+
+    assert r.status_code == 200, r.text
+    sent = r.json()
+    assert sent["has_attachments"] is True
+    assert "hidden@example.com" not in r.text
+    assert "bcc" not in r.text.lower()
+
+    with get_conn() as conn:
+        msg = conn.execute(
+            """
+            SELECT account_id, to_emails, cc_emails, bcc_emails, has_attachments
+            FROM messages
+            WHERE id = ?
+            """,
+            (sent["id"],),
+        ).fetchone()
+        assert msg["account_id"] == "A"
+        assert msg["to_emails"] == '["new.person@example.com"]'
+        assert msg["cc_emails"] == '["copy@example.com"]'
+        assert msg["bcc_emails"] == '["hidden@example.com"]'
+        assert msg["has_attachments"] == 1
+
+        attachments = conn.execute(
+            """
+            SELECT filename, mime_type, size_bytes, sha256, local_path
+            FROM attachments
+            WHERE message_id = ?
+            ORDER BY filename
+            """,
+            (sent["id"],),
+        ).fetchall()
+        assert [att["filename"] for att in attachments] == ["brief.pdf", "notes.txt"]
+        assert attachments[0]["mime_type"] == "application/pdf"
+        assert attachments[0]["size_bytes"] == 12_345
+        assert all(att["sha256"] is None for att in attachments)
+        assert all(att["local_path"] is None for att in attachments)
+
+        contact = conn.execute(
+            "SELECT has_attachments FROM contacts WHERE id = ?",
+            (sent["contact_id"],),
+        ).fetchone()
+        assert contact["has_attachments"] == 1
+
+
+def test_send_new_message_rejects_invalid_cc_bcc_and_oversized_attachment_metadata(client) -> None:  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO accounts (id, provider, email, is_active, created_at) VALUES ('A', 'gmail', 'me@example.com', 1, ?)",
+            (int(time.time()),),
+        )
+        conn.commit()
+
+    invalid_email = client.post(
+        "/messages/send",
+        json={
+            "account_id": "A",
+            "to_email": "new.person@example.com",
+            "cc_emails": ["not-an-email"],
+            "body": "Corps valide",
+        },
+    )
+    assert invalid_email.status_code == 422
+
+    oversized = client.post(
+        "/messages/send",
+        json={
+            "account_id": "A",
+            "to_email": "new.person@example.com",
+            "body": "Corps valide",
+            "attachments": [
+                {
+                    "filename": "big.zip",
+                    "mime_type": "application/zip",
+                    "size_bytes": 26 * 1024 * 1024,
+                }
+            ],
+        },
+    )
+    assert oversized.status_code == 422
