@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { Message } from "@/api/queries";
 import {
   buildDraftPayload,
+  buildReplyCcState,
+  buildSignedBody,
   canSendComposer,
   getComposerInstanceKey,
   getDefaultReplySubject,
+  getReplyCcCandidates,
   isCurrentDraftGeneration,
   shouldSaveDraft,
 } from "./draftModel";
@@ -18,6 +21,7 @@ const baseMessage: Message = {
   sent_at: 1_778_000_000,
   has_attachments: false,
   is_read: true,
+  cc_emails: [],
 };
 
 describe("composer draft model", () => {
@@ -40,6 +44,7 @@ describe("composer draft model", () => {
         contactId: "demo-contact-alice",
         subject: "RE: Projet Alpha",
         body: "Brouillon local",
+        ccEmails: ["copie@example.com"],
         signatureActive: true,
       }),
     ).toEqual({
@@ -47,8 +52,41 @@ describe("composer draft model", () => {
       contact_id: "demo-contact-alice",
       subject: "RE: Projet Alpha",
       body_text: "Brouillon local",
+      cc_emails: ["copie@example.com"],
       signature_active: true,
     });
+  });
+
+  it("propose les CC du dernier message entrant uniquement quand il y en a", () => {
+    const incomingWithCc: Message = {
+      ...baseMessage,
+      id: "msg-in-cc",
+      direction: "in",
+      cc_emails: ["copie@example.com", "team@example.com"],
+    };
+    const laterOutgoing: Message = {
+      ...baseMessage,
+      id: "msg-out",
+      direction: "out",
+      cc_emails: ["ne-pas-reprendre@example.com"],
+      sent_at: incomingWithCc.sent_at + 10,
+    };
+
+    expect(getReplyCcCandidates([incomingWithCc, laterOutgoing])).toEqual([
+      "copie@example.com",
+      "team@example.com",
+    ]);
+    expect(getReplyCcCandidates([{ ...baseMessage, cc_emails: [] }])).toEqual([]);
+    expect(buildReplyCcState([incomingWithCc])).toEqual({ visible: true, emails: ["copie@example.com", "team@example.com"] });
+    expect(buildReplyCcState([{ ...baseMessage, cc_emails: [] }])).toEqual({ visible: false, emails: [] });
+  });
+
+  it("applique la signature du compte uniquement quand le toggle est actif", () => {
+    expect(buildSignedBody({ body: "Bonjour", signature: "—\nAlice", signatureActive: true })).toBe(
+      "Bonjour\n\n—\nAlice",
+    );
+    expect(buildSignedBody({ body: "Bonjour", signature: "—\nAlice", signatureActive: false })).toBe("Bonjour");
+    expect(buildSignedBody({ body: "Bonjour", signature: null, signatureActive: true })).toBe("Bonjour");
   });
 
   it("bloque l'envoi pendant une sauvegarde de brouillon en vol", () => {

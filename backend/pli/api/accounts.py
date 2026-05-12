@@ -46,6 +46,7 @@ class AccountSummary(BaseModel):
     unread_count: int = 0
     is_active: bool = True
     last_sync_at: datetime | None = None
+    signature: str | None = None
 
 
 def _row_to_summary(row: dict[str, Any]) -> AccountSummary:
@@ -62,6 +63,7 @@ def _row_to_summary(row: dict[str, Any]) -> AccountSummary:
         unread_count=int(row.get("unread_count") or 0),
         is_active=bool(row.get("is_active", 1)),
         last_sync_at=last_sync_iso,
+        signature=row.get("signature"),
     )
 
 
@@ -77,7 +79,7 @@ def list_accounts() -> list[AccountSummary]:
             """
             SELECT
                 a.id, a.provider, a.email, a.display_name, a.avatar_color,
-                a.is_active, a.last_sync_at,
+                a.is_active, a.last_sync_at, a.signature,
                 COALESCE(SUM(c.unread_count), 0) AS unread_count
             FROM accounts a
             LEFT JOIN contacts c ON c.account_id = a.id

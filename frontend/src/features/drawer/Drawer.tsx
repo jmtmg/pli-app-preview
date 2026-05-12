@@ -88,6 +88,15 @@ export function getThemeDatasetValue(themeMode: ThemeMode): "dark" | "light" {
   return themeMode === "Clair" ? "light" : "dark";
 }
 
+export function getAccountSignaturePreview(signature: string | null | undefined): string {
+  const compact = (signature ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ");
+  return compact ? `Signature: ${compact.replace(/^[-—]\s*/, "")}` : "Signature non configurée";
+}
+
 export function readStoredThemeMode(): ThemeMode {
   if (typeof window === "undefined") return "Sombre";
   try {
@@ -303,6 +312,9 @@ export function DrawerView({
                       <div className="truncate text-[13px] font-medium">{account.email}</div>
                       <div className="text-[11px] text-text-dim uppercase">
                         {getProviderLabel(account.provider)} · {formatSyncStatus(account.last_sync_at, now)}
+                      </div>
+                      <div className="mt-0.5 truncate text-[11px] text-text-muted">
+                        {getAccountSignaturePreview(account.signature)}
                       </div>
                     </div>
                     {account.unread_count > 0 && (

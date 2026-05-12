@@ -8,6 +8,7 @@ import {
   getNextThemeMode,
   getProviderLabel,
   getThemeDatasetValue,
+  getAccountSignaturePreview,
 } from "./Drawer";
 
 const NOW = new Date("2026-05-12T10:00:00Z");
@@ -22,6 +23,7 @@ const ACCOUNTS: Account[] = [
     unread_count: 7,
     is_active: true,
     last_sync_at: "2026-05-12T09:30:00Z",
+    signature: "—\nAlice PLI",
   },
   {
     id: "account-b",
@@ -32,6 +34,7 @@ const ACCOUNTS: Account[] = [
     unread_count: 0,
     is_active: true,
     last_sync_at: null,
+    signature: null,
   },
 ];
 
@@ -60,6 +63,7 @@ describe("Drawer v1 account status", () => {
     expect(html).toContain("Google");
     expect(html).toContain("7 non lus");
     expect(html).toContain("Synchronisé récemment");
+    expect(html).toContain("Signature: Alice PLI");
     expect(html).toContain("Thème");
     expect(html).toContain("role=\"switch\"");
     expect(html).toContain("aria-checked=\"false\"");
@@ -91,6 +95,8 @@ describe("Drawer v1 account status", () => {
   it("expose des helpers déterministes pour provider, thème et statut sync", () => {
     expect(getProviderLabel("gmail")).toBe("Google");
     expect(getProviderLabel("microsoft")).toBe("Microsoft");
+    expect(getAccountSignaturePreview("—\nAlice PLI")).toBe("Signature: Alice PLI");
+    expect(getAccountSignaturePreview(null)).toBe("Signature non configurée");
     expect(getNextThemeMode("Sombre")).toBe("Clair");
     expect(getNextThemeMode("Clair")).toBe("Sombre");
     expect(getThemeDatasetValue("Sombre")).toBe("dark");

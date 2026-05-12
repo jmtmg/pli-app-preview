@@ -16,6 +16,7 @@ export interface Account {
   unread_count: number;
   is_active: boolean;
   last_sync_at: string | null;
+  signature: string | null;
 }
 
 /** ConversationItem — aligne sur `ConversationListResponse.items` du backend
@@ -51,6 +52,7 @@ export interface Message {
   sent_at: number;
   has_attachments: boolean;
   is_read: boolean;
+  cc_emails: string[];
 }
 
 export interface Attachment {
@@ -230,7 +232,7 @@ export const useSendMessage = () => {
 export const useSaveDraft = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Omit<Draft, "id" | "in_reply_to" | "to_emails" | "cc_emails">) =>
+    mutationFn: (payload: Omit<Draft, "id" | "in_reply_to" | "to_emails">) =>
       post<Draft>("/messages/drafts", payload),
     onSuccess: (draft) => {
       qc.setQueryData(["draft", draft.account_id, draft.contact_id], draft);

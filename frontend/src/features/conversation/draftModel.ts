@@ -5,7 +5,13 @@ export interface DraftPayload {
   contact_id: string;
   subject: string;
   body_text: string;
+  cc_emails: string[];
   signature_active: boolean;
+}
+
+export interface ReplyCcState {
+  visible: boolean;
+  emails: string[];
 }
 
 export function getDefaultReplySubject(messages: Message[] | undefined): string {
@@ -34,6 +40,32 @@ export function canSendComposer({
   return Boolean(body.trim()) && !sendPending && !savePending;
 }
 
+export function getReplyCcCandidates(messages: Message[] | undefined): string[] {
+  const lastIncomingWithCc = [...(messages ?? [])]
+    .reverse()
+    .find((message) => message.direction === "in" && message.cc_emails.length > 0);
+  return lastIncomingWithCc ? [...lastIncomingWithCc.cc_emails] : [];
+}
+
+export function buildReplyCcState(messages: Message[] | undefined): ReplyCcState {
+  const emails = getReplyCcCandidates(messages);
+  return { visible: emails.length > 0, emails };
+}
+
+export function buildSignedBody({
+  body,
+  signature,
+  signatureActive,
+}: {
+  body: string;
+  signature: string | null | undefined;
+  signatureActive: boolean;
+}): string {
+  const cleanSignature = (signature ?? "").trim();
+  if (!signatureActive || !cleanSignature) return body;
+  return `${body.trimEnd()}\n\n${cleanSignature}`;
+}
+
 export function isCurrentDraftGeneration({
   scheduledGeneration,
   currentGeneration,
@@ -54,18 +86,21 @@ export function buildDraftPayload({
   subject,
   body,
   signatureActive,
+  ccEmails = [],
 }: {
   accountId: string;
   contactId: string;
   subject: string;
   body: string;
   signatureActive: boolean;
+  ccEmails?: string[];
 }): DraftPayload {
   return {
     account_id: accountId,
     contact_id: contactId,
     subject,
     body_text: body,
+    cc_emails: ccEmails,
     signature_active: signatureActive,
   };
 }

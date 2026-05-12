@@ -25,9 +25,9 @@ def _seed_two_accounts() -> None:
             """
             INSERT INTO accounts (id, provider, email, display_name, avatar_color,
                                   oauth_access, oauth_refresh, oauth_expiry,
-                                  last_sync_at, is_active, created_at)
+                                  signature, last_sync_at, is_active, created_at)
             VALUES ('acc-A', 'gmail', 'alice@example.com', 'Alice',
-                    '#00aa88', 'enc-token-A', 'enc-refresh-A', ?, ?, 1, ?)
+                    '#00aa88', 'enc-token-A', 'enc-refresh-A', ?, '—\nAlice', ?, 1, ?)
             """,
             (now + 3600, now, now - 100),
         )
@@ -130,8 +130,9 @@ def test_list_accounts_returns_expected_schema(client) -> None:  # type: ignore[
     a = client.get("/accounts").json()[0]
     # Cle presentes
     for k in ("id", "provider", "email", "display_name", "avatar_color",
-             "unread_count", "is_active", "last_sync_at"):
+             "unread_count", "is_active", "last_sync_at", "signature"):
         assert k in a, f"champ manquant : {k}"
+    assert a["signature"] == "—\nAlice"
     assert a["provider"] in ("gmail", "microsoft")
     assert a["is_active"] is True
     # last_sync_at est soit None, soit une ISO (contient "T")

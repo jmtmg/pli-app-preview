@@ -34,7 +34,7 @@ In PLI, Settings → **Accounts** → **Disconnect** does the same + wipes our r
 
 ## Certification & audit
 
-PLI has gone through **Google's OAuth verification** (brand review + privacy policy check). For Microsoft, published **Multi-Tenant + Publisher Verified**.
+For a real beta/prod release, PLI must complete the appropriate provider reviews before claiming verified status: Google OAuth verification (brand review + privacy policy depending on scopes) and Microsoft Multi-Tenant + Publisher Verified if multi-tenant mode is retained.
 
 ## Least privilege
 

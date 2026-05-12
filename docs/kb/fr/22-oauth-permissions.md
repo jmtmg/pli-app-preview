@@ -34,7 +34,7 @@ Côté PLI, Réglages → **Comptes** → **Déconnecter**. Fait la même chose 
 
 ## Certification & audit
 
-PLI a suivi la **vérification OAuth Google** (brand review + privacy policy check). Pour Microsoft, publication **Multi-Tenant + Publisher Verified**.
+Pour une bêta/prod réelle, PLI devra passer les revues provider appropriées avant de déclarer l’app vérifiée : vérification OAuth Google (brand review + privacy policy selon scopes) et publication Microsoft Multi-Tenant + Publisher Verified si le mode multi-tenant est retenu.
 
 ## Minimum de privilèges
 

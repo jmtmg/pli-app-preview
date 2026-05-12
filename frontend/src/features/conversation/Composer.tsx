@@ -6,9 +6,11 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Message } from "@/api/queries";
-import { useDeleteDraft, useDraft, useSaveDraft, useSendMessage } from "@/api/queries";
+import { useAccounts, useDeleteDraft, useDraft, useSaveDraft, useSendMessage } from "@/api/queries";
 import {
   buildDraftPayload,
+  buildReplyCcState,
+  buildSignedBody,
   canSendComposer,
   getComposerInstanceKey,
   getDefaultReplySubject,
@@ -27,9 +29,12 @@ export function Composer(props: Props) {
 
 function ComposerInner({ accountId, contactId, messages }: Props) {
   const defaultSubject = useMemo(() => getDefaultReplySubject(messages), [messages]);
+  const defaultCcState = useMemo(() => buildReplyCcState(messages), [messages]);
   const [body, setBody] = useState("");
   const [subject, setSubject] = useState(defaultSubject);
   const [signatureActive, setSignatureActive] = useState(true);
+  const [ccVisible, setCcVisible] = useState(defaultCcState.visible);
+  const [ccEmails, setCcEmails] = useState<string[]>(defaultCcState.emails);
   const [subjectSheetOpen, setSubjectSheetOpen] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState("");
@@ -42,6 +47,9 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
   const draft = useDraft(accountId, contactId);
   const saveDraft = useSaveDraft();
   const deleteDraft = useDeleteDraft();
+  const accounts = useAccounts();
+  const accountSignature = accounts.data?.find((account) => account.id === accountId)?.signature ?? null;
+  const signatureLabel = accountSignature ? "Compte" : "off";
   const composerKey = accountId ? `${accountId}:${contactId}` : null;
 
   useEffect(() => {
@@ -51,6 +59,8 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
       setDraftId(draft.data.id);
       setBody(draft.data.body_text);
       setSubject(draft.data.subject ?? defaultSubject);
+      setCcEmails(draft.data.cc_emails);
+      setCcVisible(draft.data.cc_emails.length > 0 || defaultCcState.visible);
       setSignatureActive(draft.data.signature_active);
       setSavedNotice("Brouillon repris");
       return;
@@ -58,9 +68,11 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
     setDraftId(null);
     setBody("");
     setSubject(defaultSubject);
+    setCcEmails(defaultCcState.emails);
+    setCcVisible(defaultCcState.visible);
     setSignatureActive(true);
     setSavedNotice("");
-  }, [composerKey, defaultSubject, draft.data, draft.isLoading, messages]);
+  }, [composerKey, defaultCcState, defaultSubject, draft.data, draft.isLoading, messages]);
 
   // Auto-resize : croît jusqu'à ~6 lignes puis devient scrollable.
   useEffect(() => {
@@ -90,6 +102,7 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
           contactId,
           subject,
           body,
+          ccEmails: ccVisible ? ccEmails : [],
           signatureActive,
         }),
         {
@@ -109,7 +122,7 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
       );
     }, 3_000);
     return () => window.clearTimeout(timer);
-  }, [accountId, body, contactId, defaultSubject, saveDraft, signatureActive, subject]);
+  }, [accountId, body, ccEmails, ccVisible, contactId, defaultSubject, saveDraft, signatureActive, subject]);
 
   useEffect(() => {
     if (!subjectSheetOpen) return;
@@ -126,12 +139,21 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
   function handleSend() {
     if (!canSendComposer({ body, sendPending: send.isPending, savePending: saveDraft.isPending })) return;
     draftGenerationRef.current += 1;
+    const signedBody = buildSignedBody({ body, signature: accountSignature, signatureActive });
     send.mutate(
-      { account_id: accountId ?? undefined, contact_id: contactId, body, subject },
+      {
+        account_id: accountId ?? undefined,
+        contact_id: contactId,
+        body: signedBody,
+        subject,
+        cc_emails: ccVisible ? ccEmails : [],
+      },
       {
         onSuccess: () => {
           setBody("");
           setSubject(defaultSubject);
+          setCcEmails(defaultCcState.emails);
+          setCcVisible(defaultCcState.visible);
           setSavedNotice("");
           if (draftId && accountId) {
             deleteDraft.mutate({ id: draftId, accountId, contactId });
@@ -174,19 +196,41 @@ function ComposerInner({ accountId, contactId, messages }: Props) {
         >
           ↳ <span className="text-text-muted">{subject || "Sans sujet"}</span>
         </button>
+        {(defaultCcState.visible || ccVisible) && (
+          <button
+            type="button"
+            onClick={() => setCcVisible((value) => !value)}
+            className="min-h-11 rounded-lg px-2 hover:bg-bg-e3 active:bg-bg-e2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            aria-pressed={ccVisible}
+            aria-label="Inclure ou retirer les destinataires en copie du dernier message"
+          >
+            Cc <span className="text-text-muted">{ccVisible ? ccEmails.length : "off"}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setSignatureActive((value) => !value)}
           className="min-h-11 rounded-lg px-2 hover:bg-bg-e3 active:bg-bg-e2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
           aria-pressed={signatureActive}
-          aria-label="Activer ou désactiver l’indicateur de signature démo"
+          aria-label="Activer ou désactiver la signature du compte"
         >
-          Sig. <span className="text-text-muted">{signatureActive ? "Démo" : "off"}</span>
+          Sig. <span className="text-text-muted">{signatureActive ? signatureLabel : "off"}</span>
         </button>
         <span className="hidden sm:inline truncate">
           De <span className="text-text-muted">demo@pli-app.fr</span>
         </span>
       </div>
+
+      {ccVisible && ccEmails.length > 0 && (
+        <div className="px-3 pt-2 text-[11px] text-text-dim flex flex-wrap items-center gap-1.5">
+          <span className="font-medium text-text-muted">Cc</span>
+          {ccEmails.map((email) => (
+            <span key={email} className="rounded-full border border-border px-2 py-1">
+              {email}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="px-3 py-2 flex items-end gap-2">
         <button

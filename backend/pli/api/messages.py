@@ -57,6 +57,19 @@ class MessageItem(BaseModel):
     sent_at: int
     has_attachments: bool = False
     is_read: bool = False
+    cc_emails: list[str] = Field(default_factory=list)
+
+
+def _parse_public_email_list(value: str | None) -> list[str]:
+    if not value:
+        return []
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [str(item) for item in parsed if isinstance(item, str) and item.strip()]
 
 
 def _row_to_message(row: dict[str, Any]) -> MessageItem:
@@ -74,6 +87,7 @@ def _row_to_message(row: dict[str, Any]) -> MessageItem:
         sent_at=int(row["received_at"]),
         has_attachments=bool(row.get("has_attachments", 0)),
         is_read=bool(row.get("is_read", 0)),
+        cc_emails=_parse_public_email_list(row.get("cc_emails")),
     )
 
 
@@ -97,7 +111,7 @@ def messages_by_contact(contact_id: str, limit: int = 200) -> list[MessageItem]:
         rows = conn.execute(
             """
             SELECT id, contact_id, direction, subject, snippet, body_text,
-                   received_at, has_attachments, is_read
+                   received_at, has_attachments, is_read, cc_emails
             FROM messages
             WHERE contact_id = ?
             ORDER BY received_at ASC
@@ -520,7 +534,7 @@ async def send_message(payload: SendMessageInput) -> MessageItem:
         row = conn.execute(
             """
             SELECT id, contact_id, direction, subject, snippet, body_text,
-                   received_at, has_attachments, is_read
+                   received_at, has_attachments, is_read, cc_emails
             FROM messages WHERE id = ?
             """,
             (message_id,),

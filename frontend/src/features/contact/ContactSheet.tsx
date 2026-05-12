@@ -285,12 +285,15 @@ export function ContactProfile({
               <li key={attachment.id} className="rounded-2xl bg-bg-e2 border border-border p-3 min-w-0">
                 <div className="flex items-start gap-2 min-w-0">
                   <span className="w-9 h-9 rounded-xl bg-accent-soft text-accent flex items-center justify-center shrink-0" aria-hidden>
-                    📎
+                    {getAttachmentPreviewIcon(attachment.mime_type, attachment.filename)}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] text-text font-medium">{attachment.filename}</p>
                     <p className="mt-0.5 text-[11px] text-text-dim">
                       {formatAttachmentType(attachment.mime_type, attachment.filename)} · {formatSize(attachment.size_bytes)} · {formatAttachmentDate(attachment.created_at)}
+                    </p>
+                    <p className="mt-2 rounded-xl border border-border bg-bg px-2.5 py-2 text-[11px] text-text-muted" aria-label={`Prévisualisation ${attachment.filename}`}>
+                      {formatAttachmentPreview(attachment.mime_type, attachment.filename)}
                     </p>
                   </div>
                 </div>
@@ -495,10 +498,27 @@ export function formatAttachmentType(mimeType: string | null, filename: string):
   const lowerFilename = filename.toLowerCase();
   if (mime.includes("pdf") || lowerFilename.endsWith(".pdf")) return "PDF";
   if (mime.startsWith("image/") || /\.(png|jpe?g|gif|webp)$/.test(lowerFilename)) return "Image";
+  if (mime.startsWith("text/") || /\.(txt|md|csv)$/.test(lowerFilename)) return "Texte";
   if (mime.includes("spreadsheet") || /\.(xlsx?|csv)$/.test(lowerFilename)) return "Tableur";
   if (mime.includes("word") || /\.(docx?|rtf)$/.test(lowerFilename)) return "Document";
   if (mime.includes("zip") || lowerFilename.endsWith(".zip")) return "Archive";
   return "Fichier";
+}
+
+export function formatAttachmentPreview(mimeType: string | null, filename: string): string {
+  const kind = formatAttachmentType(mimeType, filename);
+  if (kind === "Image") return "Aperçu image local";
+  if (kind === "PDF") return "Aperçu PDF local";
+  if (kind === "Texte") return "Aperçu texte local";
+  return "Aperçu indisponible";
+}
+
+function getAttachmentPreviewIcon(mimeType: string | null, filename: string): string {
+  const kind = formatAttachmentType(mimeType, filename);
+  if (kind === "Image") return "▧";
+  if (kind === "PDF") return "PDF";
+  if (kind === "Texte") return "TXT";
+  return "📎";
 }
 
 export function formatAttachmentDate(createdAt: number | string | null | undefined): string {

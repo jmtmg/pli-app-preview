@@ -84,6 +84,25 @@ def test_messages_by_contact_projection_no_secrets(client) -> None:  # type: ign
         assert forbidden not in item, f"champ sensible expose : {forbidden}"
 
 
+def test_messages_by_contact_exposes_public_cc_without_bcc(client) -> None:  # type: ignore[no-untyped-def]
+    from pli.db import get_conn
+
+    _seed_conv()
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE messages SET cc_emails = ?, bcc_emails = ? WHERE id = 'm-a1'",
+            ('["copie@example.com"]', '["secret@example.com"]'),
+        )
+        conn.commit()
+
+    r = client.get("/messages/by-contact/c-alice")
+    assert r.status_code == 200, r.text
+    first = r.json()[0]
+    assert first["cc_emails"] == ["copie@example.com"]
+    assert "secret@example.com" not in r.text
+    assert "bcc" not in r.text.lower()
+
+
 def test_messages_by_contact_snippet_fallback_to_body_text(client) -> None:  # type: ignore[no-untyped-def]
     _seed_conv()
     items = client.get("/messages/by-contact/c-alice").json()
@@ -285,7 +304,7 @@ def test_send_new_message_persists_cc_bcc_and_attachment_metadata_without_conten
     sent = r.json()
     assert sent["has_attachments"] is True
     assert "hidden@example.com" not in r.text
-    assert "bcc" not in r.text.lower()
+    assert "bcc_emails" not in sent
 
     with get_conn() as conn:
         msg = conn.execute(

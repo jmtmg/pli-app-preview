@@ -4,6 +4,7 @@ import type { Contact, ContactPatchPayload } from "@/api/queries";
 import {
   ContactProfile,
   formatAttachmentDate,
+  formatAttachmentPreview,
   formatAttachmentType,
   getContactActionState,
   getContactMutationErrorMessage,
@@ -33,6 +34,14 @@ const CONTACT: Contact = {
       mime_type: "application/pdf",
       size_bytes: 42_000,
       created_at: 1_778_270_400,
+    },
+    {
+      id: "att-2",
+      message_id: "m1",
+      filename: "photo-chantier.png",
+      mime_type: "image/png",
+      size_bytes: 120_000,
+      created_at: 1_778_270_500,
     },
   ],
 };
@@ -77,6 +86,9 @@ describe("ContactSheet Cowork MVP", () => {
     expect(html).toContain("href=\"mailto:alice@example.com\"");
     expect(html).toContain("brief-strategie.pdf");
     expect(html).toContain("PDF");
+    expect(html).toContain("Aperçu PDF local");
+    expect(html).toContain("photo-chantier.png");
+    expect(html).toContain("Aperçu image local");
     expect(html).toContain("41.0 ko");
     expect(html).toContain("Ouvrir");
   });
@@ -149,6 +161,10 @@ describe("ContactSheet Cowork MVP", () => {
     });
     expect(formatAttachmentType("application/pdf", "brief-strategie.pdf")).toBe("PDF");
     expect(formatAttachmentType("image/png", "avatar.png")).toBe("Image");
+    expect(formatAttachmentPreview("image/png", "avatar.png")).toBe("Aperçu image local");
+    expect(formatAttachmentPreview("application/pdf", "brief.pdf")).toBe("Aperçu PDF local");
+    expect(formatAttachmentPreview("text/plain", "notes.txt")).toBe("Aperçu texte local");
+    expect(formatAttachmentPreview("application/zip", "archive.zip")).toBe("Aperçu indisponible");
     expect(formatAttachmentDate(1_778_270_400)).toMatch(/2026/);
   });
 

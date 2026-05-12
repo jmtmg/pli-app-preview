@@ -1,10 +1,11 @@
 # PLI — statut final fonctionnel local
 
-Date : 2026-05-08 18:22 CEST
-Workspace : `/Users/jm/context-engine/worktrees/pli-app-codex-composer-local`
+Date initiale : 2026-05-08 18:22 CEST
+Mise à jour v1 locale : 2026-05-12 CEST
+Workspace actuel : `/Users/jm/context-engine/projects/pli-app`
 Archive source préservée : `/Users/jm/context-engine/recovered/pli-cowork-complete-2026-05-08/source-surface/PLI-Archive-Complete/`
-Base de départ : `3051bef feat: add local functional MVP slice`
-Commit de cette tranche courante : non créé dans ce sandbox ; `git add` ne peut pas écrire l’index du worktree situé sous `/Users/jm/context-engine/projects/pli-app/.git/worktrees/pli-app-codex-composer-local/` (`Operation not permitted`). Les changements sont laissés non commités.
+Base de départ historique : `3051bef feat: add local functional MVP slice`
+Dernier commit vérifié avant cette tranche v1 : `b04d65b feat(pli): add v1 planner and drawer sync polish`.
 
 ## Verdict
 
@@ -90,6 +91,27 @@ Nouvelle tranche planifiée et implémentée :
 
 Commandes vérifiées pour cette tranche : `make test` (`112 passed, 3 skipped` backend ; `42 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets/dangerous-code. Revue indépendante finale UX/a11y et sécurité/scope/tests : OK, aucun blocker.
 
+## Addendum V1 finale — CC, previews PJ, signatures, OAuth préparé et décision SQLite
+
+Date : 2026-05-12 CEST
+
+Nouvelle tranche implémentée et vérifiée :
+
+- réponse inline : les CC publics du dernier message entrant peuvent être repris dans le composer ; les CCI restent absentes des projections publiques ;
+- API messages : `cc_emails` exposé côté lecture publique, sans `bcc_emails`, sans headers bruts et sans contenu provider sensible ;
+- préviews locales de pièces jointes : libellés explicites pour image, PDF et texte, fallback honnête `Aperçu indisponible` pour types non prévisualisables ;
+- signatures par compte MVP local : `signature` exposée comme champ public non sensible, aperçu dans le drawer et ajout local au corps envoyé quand le toggle signature est actif ;
+- préparation OAuth officielle sans secrets : ADR architecture OAuth, runbook Microsoft Graph et correction KB Gmail/Microsoft pour ne pas prétendre à une vérification provider déjà faite ;
+- décision backend v1 : SQLite MVP reste le runtime canonique local ; SQLAlchemy/M2-M4 est documenté comme migration future non-gate pour la v1 locale.
+
+Commandes vérifiées pour cette tranche : `make test` (`113 passed, 3 skipped` backend ; `44 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets/dangerous-code (`0 finding`). Revues indépendantes finales : frontend/UX/product honesty `APPROVED`, backend/API/sécurité/scope/tests `APPROVED`, aucun blocker.
+
+Nouveaux documents de référence :
+
+- `docs/adr/0009-oauth-official-provider-architecture.md` ;
+- `docs/adr/0010-backend-v1-sqlite-mvp-canonical.md` ;
+- `docs/runbooks/oauth-microsoft-setup.md`.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
@@ -104,20 +126,25 @@ Ce qui est terminé et vérifié :
 - composer enrichi MVP : sujet `RE:` éditable via bottom sheet, signature démo toggle, brouillon local autosauvegardé toutes les 3 secondes et repris par conversation ;
 - fiche contact complète MVP : avatar large, infos visibles, actions Appeler/Message/Archiver, édition locale via PATCH et grille PJ lisible ;
 - nouveau message modal local : `De`, `À`, `Cc`, `Cci`, `Sujet`, `Corps`, suggestions contacts, pièces jointes en métadonnées locales, envoi local par contact existant ou nouveau destinataire email ;
+- réponse inline v1 : reprise optionnelle des CC publics du message original, sans exposer ni renvoyer les CCI publiques ;
+- signatures par compte MVP local : signature non sensible visible dans le drawer et ajoutée localement au corps envoyé quand activée ;
+- previews locales de pièces jointes : libellés image/PDF/texte et fallback explicite pour types non prévisualisables ;
+- OAuth officiel préparé côté architecture/docs/runbooks, sans secrets et sans activation runtime ;
+- décision architecture v1 documentée : SQLite local MVP est canonique pour la v1, SQLAlchemy/M2-M4 reste backlog non-gate ;
 - tests/lint/typecheck MVP verts ;
 - ESLint 9 flat config restauré (le lint frontend n’est plus seulement `tsc --noEmit`) ;
 - `npm audit fix` non forcé appliqué : vulnérabilités high supprimées ;
 - `make typecheck` utilise une config `backend/mypy-mvp.ini` pour garder le gate MVP strict sur les fichiers actifs sans faire échouer la tranche sur les imports M2-M4 historiques ;
 - strates backend futures M2-M4 isolées par commandes explicites (`test-be-future`, `typecheck-future`) et documentées.
 
-Ce qui n’est **pas** terminé : `make test-be-all`, `make typecheck-all`, OAuth réel Gmail/Microsoft, upload/envoi provider réel des pièces jointes, previews natives de PJ, Stripe/billing réel, RGPD/OCR/beta complets. Ces éléments sont bloqués par une décision d’architecture DB/session et/ou par des flows officiels/secrets à fournir. Je ne les déclare donc pas « finis ».
+Ce qui n’est **pas** terminé : `make test-be-all`, `make typecheck-all`, OAuth réel Gmail/Microsoft, upload/envoi provider réel des pièces jointes, previews natives de PJ, Stripe/billing réel, RGPD/OCR/beta complets. Ces éléments restent explicitement hors périmètre v1 locale : l’architecture v1 garde SQLite MVP comme runtime canonique, tandis que les strates auth/billing/RGPD/OCR/SQLAlchemy M2-M4 sont documentées comme migration future non-gate. Je ne les déclare donc pas « finis ».
 
 ## Commandes vérifiées OK
 
 Toutes les commandes ci-dessous ont été relancées après les modifications finales.
 
 ```bash
-cd /Users/jm/context-engine/worktrees/pli-app-codex-composer-local
+cd /Users/jm/context-engine/projects/pli-app
 make test
 make lint
 make typecheck
@@ -127,8 +154,8 @@ cd frontend && npm run build
 Résultats :
 
 - `make test` :
-  - backend MVP : `112 passed, 3 skipped` ;
-  - frontend Vitest : `7 files passed`, `39 tests passed`.
+  - backend MVP : `113 passed, 3 skipped` ;
+  - frontend Vitest : `8 files passed`, `44 tests passed`.
 - `make lint` :
   - backend ruff : `All checks passed!` ;
   - frontend : `eslint . && tsc --noEmit` OK, sans warning final.
@@ -224,7 +251,7 @@ Diagnostic détaillé : `docs/diagnostics/2026-05-08-full-suite-stratification.m
 Depuis la racine :
 
 ```bash
-cd /Users/jm/context-engine/worktrees/pli-app-codex-composer-local
+cd /Users/jm/context-engine/projects/pli-app
 make demo
 ```
 
@@ -236,13 +263,11 @@ Cela lance :
 - pièces jointes locales : `.pli-dev/att` ;
 - données démo activées par `PLI_DEMO=true`.
 
-## Blocage humain / décision produit
+## Décision produit v1 / suite
 
-Pour pouvoir dire que « tout PLI » est terminé, il faut une décision explicite :
+La décision architecture pour la v1 locale est désormais documentée :
 
-1. garder `pli/db.py` SQLite local comme architecture MVP et déplacer officiellement beta/GDPR/OCR/auth/billing en backlog non-gate ; ou
-2. migrer vers un package `pli/db/` avec `models.py`, `session.py`, SQLAlchemy, migrations, fixtures pytest et adaptation runtime local/cloud.
-
-Ensuite seulement il sera réaliste de rendre verts `make test-be-all` et `make typecheck-all` sans maquiller les tests historiques.
+1. garder `pli/db.py` SQLite local comme architecture MVP et déplacer officiellement auth/billing/RGPD/OCR/beta/SQLAlchemy M2-M4 en backlog non-gate ;
+2. préparer séparément une migration future vers un package `pli/db/` avec `models.py`, `session.py`, SQLAlchemy, migrations, fixtures pytest et adaptation runtime local/cloud.
 
 Les flows externes Gmail/Microsoft/Stripe ne peuvent pas être finalisés sans credentials/flows officiels. Aucun secret réel n’a été affiché, copié, stocké ou inventé pendant cette exécution.
