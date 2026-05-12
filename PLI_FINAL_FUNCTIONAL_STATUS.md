@@ -74,6 +74,22 @@ Nouvelle tranche implémentée et vérifiée :
 
 Commandes vérifiées pour cette tranche : `make test` (`112 passed, 3 skipped` backend ; `39 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets. Smoke local : `/health`, seed démo et `POST /messages/send` avec CC/CCI/PJ métadonnées validés sans contenu fichier.
 
+## Addendum Planner v1 — drawer comptes, statut sync et thème MVP local
+
+Date : 2026-05-12 CEST
+
+Nouvelle tranche planifiée et implémentée :
+
+- planner v1 créé dans `docs/planner/PLI_PLANNER_V1.md` pour ordonner la suite locale PLI après recherche/swipe/drafts/contact/nouveau message ;
+- étape 1 lancée et livrée : drawer comptes v1 amélioré, extraction `DrawerView` testable, statut sync par compte et résumé global ;
+- compte actif plus explicite avec fond accent soft, barre verticale et `aria-current` ;
+- providers affichés en libellés humains (`Google`, `Microsoft`) sans brancher de nouveau flux OAuth réel ;
+- statuts sync non trompeurs : `Jamais synchronisé`, `Synchronisé récemment`, `Dernière sync ...`, `Sync partielle`, `Dernière sync ancienne` ;
+- drawer fermé retiré du tab order via `inert`, `aria-hidden` et `tabindex=-1`, avec focus trap clavier quand ouvert ;
+- toggle thème local MVP (`Sombre`/`Clair`) exposé comme `role="switch"`, stocké uniquement en `localStorage` non sensible.
+
+Commandes vérifiées pour cette tranche : `make test` (`112 passed, 3 skipped` backend ; `42 tests passed` frontend), `make lint`, `make typecheck`, `cd frontend && npm run build`, `git diff --check`, scan diff secrets/dangerous-code. Revue indépendante finale UX/a11y et sécurité/scope/tests : OK, aucun blocker.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
