@@ -318,6 +318,16 @@ def _check_cloud_v1(env: Mapping[str, str], findings: list[Finding], *, deploy_e
         message="PLI_EMAIL_PROVIDER=memory n'envoie pas d'emails réels.",
         action="Configurer smtp, sendgrid ou postmark pour staging/prod.",
     )
+    if email_provider != "memory":
+        email_from = _get(env, "PLI_EMAIL_FROM")
+        _add_if(
+            findings,
+            _is_dummy(email_from) or "@" not in email_from,
+            severity="blocker",
+            code="email-from-missing",
+            message="PLI_EMAIL_FROM est absent, factice, ou n'est pas une adresse sender valide.",
+            action="Configurer un expéditeur staging validé SPF/DKIM/DMARC.",
+        )
     if email_provider in {"sendgrid", "postmark"}:
         _add_if(
             findings,
@@ -335,6 +345,22 @@ def _check_cloud_v1(env: Mapping[str, str], findings: list[Finding], *, deploy_e
             code="smtp-host-local-or-missing",
             message="Le serveur SMTP est absent ou local.",
             action="Configurer un SMTP réel ou transactionnel.",
+        )
+        _add_if(
+            findings,
+            _is_dummy(_get(env, "PLI_EMAIL_SMTP_USER")),
+            severity="blocker",
+            code="smtp-user-missing",
+            message="L'utilisateur SMTP staging est absent ou factice.",
+            action="Stocker PLI_EMAIL_SMTP_USER via variables/secrets de staging.",
+        )
+        _add_if(
+            findings,
+            not _has_good_secret(env, "PLI_EMAIL_SMTP_PASSWORD", min_len=8),
+            severity="blocker",
+            code="smtp-password-missing",
+            message="Le mot de passe SMTP staging est absent ou factice.",
+            action="Stocker PLI_EMAIL_SMTP_PASSWORD dans le gestionnaire de secrets.",
         )
 
     oauth_pairs = (

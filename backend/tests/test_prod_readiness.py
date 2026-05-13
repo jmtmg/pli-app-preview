@@ -23,7 +23,10 @@ def _base_env(**overrides: str) -> dict[str, str]:
         "PLI_S3_BUCKET": "pli-prod",
         "PLI_CORS_ORIGINS": '["https://app.pli.example.com"]',
         "PLI_EMAIL_PROVIDER": "smtp",
+        "PLI_EMAIL_FROM": "noreply@pli-app.fr",
         "PLI_EMAIL_SMTP_HOST": "smtp.transactional.example.com",
+        "PLI_EMAIL_SMTP_USER": "smtp-user-prod",
+        "PLI_EMAIL_SMTP_PASSWORD": "smtp-password-prod",
         "PLI_GMAIL_CLIENT_ID": "gmail-client-id.apps.googleusercontent.com",
         "PLI_GMAIL_CLIENT_SECRET": "gmail-client-secret-prod",
         "PLI_GMAIL_REDIRECT_URI": "https://api.pli.example.com/auth/gmail/callback",
@@ -189,6 +192,25 @@ def test_cloud_staging_blocks_legacy_ipv4_shorthand_endpoints() -> None:
     assert "microsoft-redirect-not-https" in codes
     assert "cors-origins-unsafe" in codes
     assert "s3-endpoint-not-public-https" in codes
+
+
+def test_cloud_staging_blocks_smtp_without_sender_or_credentials() -> None:
+    report = evaluate_prod_readiness(
+        _base_env(
+            PLI_EMAIL_PROVIDER="smtp",
+            PLI_EMAIL_FROM="",
+            PLI_EMAIL_SMTP_USER="",
+            PLI_EMAIL_SMTP_PASSWORD="",
+        ),
+        target="cloud-v1",
+        deploy_env="staging",
+    )
+
+    codes = {finding.code for finding in report.blockers}
+    assert report.status is Status.BLOCKED
+    assert "email-from-missing" in codes
+    assert "smtp-user-missing" in codes
+    assert "smtp-password-missing" in codes
 
 
 def test_cloud_production_blocks_stripe_test_key_when_m2_enabled() -> None:
