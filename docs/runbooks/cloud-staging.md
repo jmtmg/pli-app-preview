@@ -1,6 +1,6 @@
 # PLI — cloud-staging secret-safe
 
-Statut : artefact de préparation uniquement. Ne pas déployer, ne pas créer de DNS/ressource cloud, ne pas installer `flyctl`, ne pas manipuler de secret réel sans confirmation explicite.
+Statut : artefact de préparation uniquement. Ne pas déployer, ne pas créer de DNS/ressource cloud, ne pas installer `flyctl`, ne pas manipuler de secret réel sans confirmation explicite. Les bundles/fournisseurs cités (`Fly`, `Scaleway`, `Brevo` ou alternatives) ne sont pas provisionnés ni validés ; ils restent des recommandations documentées. Un staging réel demeure NO-GO tant que les confirmations humaines, providers, DNS/OAuth, secrets et backups ne sont pas prêts.
 
 ## Sources lues
 
@@ -11,6 +11,7 @@ Statut : artefact de préparation uniquement. Ne pas déployer, ne pas créer de
 ## Artefacts staging
 
 - Template secret-safe : `.env.staging.example`.
+- Matrice secrets/OAuth sans valeurs : `docs/runbooks/cloud-staging-secrets-oauth-matrix.md`.
 - Fichier runtime attendu : `.env.staging` privé, gitignoré, chmod `600`, rempli depuis 1Password/Keychain/secret manager/provider consoles uniquement.
 - Commande de preflight réelle : `make cloud-staging-preflight`.
 - Commande de preflight avec placeholders sûrs :

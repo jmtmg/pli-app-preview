@@ -7,7 +7,9 @@ obvious dummy/default values, but never expose the value of any credential.
 from __future__ import annotations
 
 import base64
+import ipaddress
 import json
+import socket
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
@@ -89,9 +91,37 @@ def _has_good_secret(env: Mapping[str, str], key: str, *, min_len: int = 24) -> 
     return len(value) >= min_len and not _is_dummy(value)
 
 
-def _is_https_url(value: str) -> bool:
+def _is_legacy_ipv4_literal(value: str) -> bool:
+    if not value or not value[0].isdigit():
+        return False
+    if any(char not in "0123456789abcdefABCDEFxX." for char in value):
+        return False
+    try:
+        socket.inet_aton(value)
+    except OSError:
+        return False
+    return True
+
+
+def _host_is_non_public(value: str) -> bool:
+    parsed = urlparse(value if "://" in value else f"//{value}")
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if not host:
+        return True
+    if host == "*" or host.startswith("*.") or host in _LOCAL_HOSTS or host.endswith(".local"):
+        return True
+    if "." not in host or host.endswith((".internal", ".lan", ".home", ".localhost")):
+        return True
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return _is_legacy_ipv4_literal(host)
+    return not address.is_global
+
+
+def _is_public_https_url(value: str) -> bool:
     parsed = urlparse(value)
-    return parsed.scheme == "https" and bool(parsed.netloc)
+    return parsed.scheme == "https" and bool(parsed.netloc) and not _host_is_non_public(value)
 
 
 def _is_fernet_key(value: str) -> bool:
@@ -102,12 +132,19 @@ def _is_fernet_key(value: str) -> bool:
     return len(value) == 44 and len(decoded) == 32
 
 
-def _is_json_string_list(value: str) -> bool:
+def _json_string_list(value: str) -> list[str] | None:
     try:
         parsed = json.loads(value)
     except json.JSONDecodeError:
-        return False
-    return isinstance(parsed, list) and bool(parsed) and all(isinstance(item, str) and item for item in parsed)
+        return None
+    if isinstance(parsed, list) and parsed and all(isinstance(item, str) and item for item in parsed):
+        return parsed
+    return None
+
+
+def _has_only_public_https_origins(value: str) -> bool:
+    origins = _json_string_list(value)
+    return origins is not None and all(origin != "*" and _is_public_https_url(origin) for origin in origins)
 
 
 def _host_is_local(value: str) -> bool:
@@ -155,35 +192,6 @@ def _check_common(env: Mapping[str, str], findings: list[Finding], *, deploy_env
         action="Générer une vraie valeur via `openssl rand -base64 64` et la stocker dans le gestionnaire de secrets.",
     )
 
-    base_url = _get(env, "PLI_BASE_URL")
-    app_url = _get(env, "PLI_APP_URL")
-    if deploy_env == "production":
-        _add_if(
-            findings,
-            not _is_https_url(base_url),
-            severity="blocker",
-            code="base-url-not-https",
-            message="PLI_BASE_URL n'est pas une URL HTTPS de production.",
-            action="Configurer l'URL publique HTTPS de l'API.",
-        )
-        _add_if(
-            findings,
-            not _is_https_url(app_url),
-            severity="blocker",
-            code="app-url-not-https",
-            message="PLI_APP_URL n'est pas une URL HTTPS de production.",
-            action="Configurer l'URL publique HTTPS du frontend.",
-        )
-    else:
-        _add_if(
-            findings,
-            not base_url or not app_url,
-            severity="blocker",
-            code="public-urls-missing",
-            message="PLI_BASE_URL ou PLI_APP_URL est absent.",
-            action="Définir les URLs publiques de staging.",
-        )
-
 
 def _check_local_v1(env: Mapping[str, str], findings: list[Finding]) -> None:
     _add_if(
@@ -221,6 +229,24 @@ def _check_local_v1(env: Mapping[str, str], findings: list[Finding]) -> None:
 
 
 def _check_cloud_v1(env: Mapping[str, str], findings: list[Finding], *, deploy_env: DeployEnv) -> None:
+    base_url = _get(env, "PLI_BASE_URL")
+    app_url = _get(env, "PLI_APP_URL")
+    _add_if(
+        findings,
+        not _is_public_https_url(base_url),
+        severity="blocker",
+        code="base-url-not-https",
+        message="PLI_BASE_URL n'est pas une URL publique HTTPS pour un cloud staging/prod exposé.",
+        action="Configurer l'URL publique HTTPS de l'API, sans localhost ni IP privée.",
+    )
+    _add_if(
+        findings,
+        not _is_public_https_url(app_url),
+        severity="blocker",
+        code="app-url-not-https",
+        message="PLI_APP_URL n'est pas une URL publique HTTPS pour un cloud staging/prod exposé.",
+        action="Configurer l'origine publique HTTPS du frontend, sans localhost ni IP privée.",
+    )
     _add_if(
         findings,
         _get(env, "PLI_MODE") != "cloud",
@@ -264,17 +290,22 @@ def _check_cloud_v1(env: Mapping[str, str], findings: list[Finding], *, deploy_e
             message=f"{key} est absent ou ressemble à une valeur de développement.",
             action=f"Configurer {key} via le gestionnaire de secrets / stockage objet de staging-prod.",
         )
+    _add_if(
+        findings,
+        bool(_get(env, "PLI_S3_ENDPOINT_URL")) and not _is_public_https_url(_get(env, "PLI_S3_ENDPOINT_URL")),
+        severity="blocker",
+        code="s3-endpoint-not-public-https",
+        message="PLI_S3_ENDPOINT_URL n'est pas un endpoint objet public HTTPS.",
+        action="Utiliser l'endpoint HTTPS officiel du fournisseur S3-compatible ; garder MinIO/local pour une cible smoke locale séparée.",
+    )
 
     cors = _get(env, "PLI_CORS_ORIGINS")
     _add_if(
         findings,
-        not cors
-        or not _is_json_string_list(cors)
-        or "*" in cors
-        or (deploy_env == "production" and "localhost" in cors.lower()),
+        not _has_only_public_https_origins(cors),
         severity="blocker",
         code="cors-origins-unsafe",
-        message="PLI_CORS_ORIGINS est absent, wildcard, local en production, ou n'est pas une JSON list.",
+        message="PLI_CORS_ORIGINS est absent, wildcard, local/non-HTTPS, ou n'est pas une JSON list.",
         action="Limiter CORS aux origines HTTPS exactes du frontend, au format JSON list.",
     )
 
@@ -321,11 +352,11 @@ def _check_cloud_v1(env: Mapping[str, str], findings: list[Finding], *, deploy_e
         )
         _add_if(
             findings,
-            deploy_env == "production" and not _is_https_url(_get(env, redirect_uri)),
+            not _is_public_https_url(_get(env, redirect_uri)),
             severity="blocker",
             code=f"{provider}-redirect-not-https",
-            message=f"Redirect URI OAuth {provider} non HTTPS en production.",
-            action=f"Configurer une redirect URI HTTPS officielle pour {provider}.",
+            message=f"Redirect URI OAuth {provider} non publique HTTPS en cloud staging/prod.",
+            action=f"Configurer une redirect URI publique HTTPS officielle pour {provider}.",
         )
 
     if _env_bool(_get(env, "PLI_ENABLE_M2")):

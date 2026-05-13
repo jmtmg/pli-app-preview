@@ -98,6 +98,99 @@ def test_cloud_production_blocks_non_json_cors_origins() -> None:
     assert "cors-origins-unsafe" in codes
 
 
+def test_cloud_staging_blocks_localhost_http_urls_and_oauth_redirects() -> None:
+    report = evaluate_prod_readiness(
+        _base_env(
+            PLI_BASE_URL="http://localhost:8000",
+            PLI_APP_URL="http://127.0.0.1:5173",
+            PLI_GMAIL_REDIRECT_URI="http://localhost:8000/auth/gmail/callback",
+            PLI_MS_REDIRECT_URI="http://127.0.0.1:8000/auth/microsoft/callback",
+        ),
+        target="cloud-v1",
+        deploy_env="staging",
+    )
+
+    codes = {finding.code for finding in report.blockers}
+    assert report.status is Status.BLOCKED
+    assert "base-url-not-https" in codes
+    assert "app-url-not-https" in codes
+    assert "gmail-redirect-not-https" in codes
+    assert "microsoft-redirect-not-https" in codes
+
+
+def test_cloud_staging_blocks_localhost_cors_origin() -> None:
+    report = evaluate_prod_readiness(
+        _base_env(PLI_CORS_ORIGINS='["http://localhost:5173"]'),
+        target="cloud-v1",
+        deploy_env="staging",
+    )
+
+    codes = {finding.code for finding in report.blockers}
+    assert report.status is Status.BLOCKED
+    assert "cors-origins-unsafe" in codes
+
+
+def test_cloud_staging_and_production_block_local_or_non_https_s3_endpoints() -> None:
+    for deploy_env in ("staging", "production"):
+        report = evaluate_prod_readiness(
+            _base_env(PLI_S3_ENDPOINT_URL="http://minio:9000"),
+            target="cloud-v1",
+            deploy_env=deploy_env,
+        )
+
+        codes = {finding.code for finding in report.blockers}
+        assert report.status is Status.BLOCKED
+        assert "s3-endpoint-not-public-https" in codes
+
+
+def test_cloud_staging_blocks_internal_single_label_https_endpoints() -> None:
+    report = evaluate_prod_readiness(
+        _base_env(
+            PLI_BASE_URL="https://api:8443",
+            PLI_APP_URL="https://web:443",
+            PLI_GMAIL_REDIRECT_URI="https://api/auth/gmail/callback",
+            PLI_MS_REDIRECT_URI="https://api/auth/microsoft/callback",
+            PLI_CORS_ORIGINS='["https://web:443"]',
+            PLI_S3_ENDPOINT_URL="https://minio:9000",
+        ),
+        target="cloud-v1",
+        deploy_env="staging",
+    )
+
+    codes = {finding.code for finding in report.blockers}
+    assert report.status is Status.BLOCKED
+    assert "base-url-not-https" in codes
+    assert "app-url-not-https" in codes
+    assert "gmail-redirect-not-https" in codes
+    assert "microsoft-redirect-not-https" in codes
+    assert "cors-origins-unsafe" in codes
+    assert "s3-endpoint-not-public-https" in codes
+
+
+def test_cloud_staging_blocks_legacy_ipv4_shorthand_endpoints() -> None:
+    report = evaluate_prod_readiness(
+        _base_env(
+            PLI_BASE_URL="https://127.1:8443",
+            PLI_APP_URL="https://10.1:443",
+            PLI_GMAIL_REDIRECT_URI="https://127.0.1/auth/gmail/callback",
+            PLI_MS_REDIRECT_URI="https://0.0.0/auth/microsoft/callback",
+            PLI_CORS_ORIGINS='["https://192.168.1:443"]',
+            PLI_S3_ENDPOINT_URL="https://10.1:9000",
+        ),
+        target="cloud-v1",
+        deploy_env="staging",
+    )
+
+    codes = {finding.code for finding in report.blockers}
+    assert report.status is Status.BLOCKED
+    assert "base-url-not-https" in codes
+    assert "app-url-not-https" in codes
+    assert "gmail-redirect-not-https" in codes
+    assert "microsoft-redirect-not-https" in codes
+    assert "cors-origins-unsafe" in codes
+    assert "s3-endpoint-not-public-https" in codes
+
+
 def test_cloud_production_blocks_stripe_test_key_when_m2_enabled() -> None:
     report = evaluate_prod_readiness(
         _base_env(

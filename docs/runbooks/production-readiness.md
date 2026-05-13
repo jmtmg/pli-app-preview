@@ -1,6 +1,6 @@
 # PLI — Runbook production readiness
 
-Statut : préparation non destructive. Ce document ne contient aucun secret et ne déclenche aucun déploiement.
+Statut : préparation non destructive. Ce document ne contient aucun secret et ne déclenche aucun déploiement. Les recommandations cloud-staging (Fly/Scaleway/Brevo ou alternatives) ne valent pas validation utilisateur : aucune ressource/provider/DNS/OAuth n'est considéré provisionné tant qu'une confirmation explicite et un smoke réel ne l'ont pas prouvé.
 
 ## Objectif
 
@@ -106,10 +106,10 @@ Rollback local :
 
 Pré-requis infra :
 
-- API publique HTTPS (`PLI_BASE_URL`) ;
-- frontend public HTTPS (`PLI_APP_URL`) ;
+- API publique HTTPS (`PLI_BASE_URL`) sans localhost/IP privée/hostname interne/notation IPv4 abrégée ;
+- frontend public HTTPS (`PLI_APP_URL`) sans localhost/IP privée/hostname interne/notation IPv4 abrégée ;
 - PostgreSQL non-localhost (`PLI_DATABASE_URL`) ;
-- stockage objet S3-compatible (`PLI_S3_ENDPOINT_URL`, bucket, access key, secret key) ;
+- stockage objet S3-compatible (`PLI_S3_ENDPOINT_URL`, bucket, access key, secret key) avec endpoint HTTPS public ;
 - clé de chiffrement cloud (`PLI_CLOUD_CRYPTO_KEY`) : clé Fernet valide générée hors logs avec `cryptography.fernet.Fernet.generate_key()` ;
 - CORS limité aux origines frontend exactes (`PLI_CORS_ORIGINS` au format JSON list, par ex. `'["https://app.example.com"]'`) ;
 - provider email réel : SMTP, SendGrid ou Postmark ;
@@ -158,6 +158,6 @@ Frontend :
 ## Décision actuelle
 
 - PLI est vérifié comme **MVP local/démo**.
-- `cloud-staging` dispose maintenant d'un template secret-safe (`.env.staging.example`), d'un runbook (`docs/runbooks/cloud-staging.md`) et d'une cible `make cloud-staging-preflight` qui n'imprime pas les valeurs.
+- `cloud-staging` dispose maintenant d'un template secret-safe (`.env.staging.example`), d'un runbook (`docs/runbooks/cloud-staging.md`) et d'une cible `make cloud-staging-preflight` qui n'imprime pas les valeurs, mais aucun provider recommandé n'est provisionné/validé et le staging réel reste bloqué.
 - La production cloud reste bloquée tant que les secrets officiels, OAuth, email, DB/S3, backups/restore et gates cloud ne sont pas fournis et validés.
 - Le prochain pas sûr est : garder `local-v1` comme cible livrable, choisir les fournisseurs staging, puis exécuter le preflight `cloud-staging` avec `.env.staging` privé avant tout déploiement.

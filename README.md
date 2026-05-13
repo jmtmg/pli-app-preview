@@ -28,7 +28,7 @@ Pour un fichier d’exemple sans secret réel, voir `.env.local.example`. Les cr
 
 ## Préparation cloud-staging secret-safe
 
-Aucun déploiement ni ressource cloud ne doit être créé sans confirmation explicite. Pour préparer la cible staging sans afficher de secrets :
+Aucun déploiement ni ressource cloud ne doit être créé sans confirmation explicite. Les fournisseurs cités dans les rapports (`Fly`, `Scaleway`, `Brevo` ou alternatives) sont des recommandations non provisionnées et non validées par l’utilisateur ; `cloud-staging` réel reste bloqué tant que les confirmations, secrets, OAuth, DNS, providers et backups ne sont pas prêts. Pour préparer la cible staging sans afficher de secrets :
 
 ```bash
 cp .env.staging.example .env.staging
@@ -37,7 +37,7 @@ chmod 600 .env.staging
 make cloud-staging-preflight
 ```
 
-Le template `.env.staging.example` est volontairement incomplet : le preflight doit rester `blocked` tant que PostgreSQL, S3/object storage, email transactionnel, OAuth Gmail/Microsoft, CORS exact et backups/restore ne sont pas provisionnés. Runbook détaillé : `docs/runbooks/cloud-staging.md`.
+Le template `.env.staging.example` est volontairement incomplet : le preflight doit rester `blocked` tant que PostgreSQL, S3/object storage, email transactionnel, OAuth Gmail/Microsoft, CORS exact et backups/restore ne sont pas provisionnés. Runbook détaillé : `docs/runbooks/cloud-staging.md` ; matrice secrets/OAuth sans valeurs : `docs/runbooks/cloud-staging-secrets-oauth-matrix.md`.
 
 ### Avec Docker
 

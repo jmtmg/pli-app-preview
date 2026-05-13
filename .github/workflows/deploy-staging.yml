@@ -22,32 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: staging
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      PLI_MODE: cloud
-      PLI_ENABLE_M2: "false"
-      PLI_DEBUG: "false"
-      PLI_DEMO: "false"
-      PLI_SECRET_KEY: ${{ secrets.PLI_SECRET_KEY }}
-      PLI_DATABASE_URL: ${{ secrets.PLI_DATABASE_URL }}
-      PLI_CLOUD_CRYPTO_KEY: ${{ secrets.PLI_CLOUD_CRYPTO_KEY }}
-      PLI_S3_ENDPOINT_URL: ${{ vars.PLI_S3_ENDPOINT_URL }}
-      PLI_S3_ACCESS_KEY: ${{ secrets.PLI_S3_ACCESS_KEY }}
-      PLI_S3_SECRET_KEY: ${{ secrets.PLI_S3_SECRET_KEY }}
-      PLI_S3_BUCKET: ${{ vars.PLI_S3_BUCKET }}
-      PLI_EMAIL_PROVIDER: ${{ vars.PLI_EMAIL_PROVIDER }}
-      PLI_EMAIL_API_KEY: ${{ secrets.PLI_EMAIL_API_KEY }}
-      PLI_EMAIL_SMTP_HOST: ${{ vars.PLI_EMAIL_SMTP_HOST }}
-      PLI_BASE_URL: ${{ vars.PLI_BASE_URL }}
-      PLI_APP_URL: ${{ vars.PLI_APP_URL }}
-      PLI_CORS_ORIGINS: ${{ vars.PLI_CORS_ORIGINS }}
-      PLI_GMAIL_CLIENT_ID: ${{ vars.PLI_GMAIL_CLIENT_ID }}
-      PLI_GMAIL_CLIENT_SECRET: ${{ secrets.PLI_GMAIL_CLIENT_SECRET }}
-      PLI_GMAIL_REDIRECT_URI: ${{ vars.PLI_GMAIL_REDIRECT_URI }}
-      PLI_MS_CLIENT_ID: ${{ vars.PLI_MS_CLIENT_ID }}
-      PLI_MS_CLIENT_SECRET: ${{ secrets.PLI_MS_CLIENT_SECRET }}
-      PLI_MS_REDIRECT_URI: ${{ vars.PLI_MS_REDIRECT_URI }}
-      PLI_MS_TENANT_ID: ${{ vars.PLI_MS_TENANT_ID || 'common' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -66,11 +40,46 @@ jobs:
 
       - name: Secret-safe staging preflight
         working-directory: backend
+        env:
+          PLI_MODE: cloud
+          PLI_ENABLE_M2: "false"
+          PLI_DEBUG: "false"
+          PLI_DEMO: "false"
+          PLI_SECRET_KEY: ${{ secrets.PLI_SECRET_KEY }}
+          PLI_DATABASE_URL: ${{ secrets.PLI_DATABASE_URL }}
+          PLI_CLOUD_CRYPTO_KEY: ${{ secrets.PLI_CLOUD_CRYPTO_KEY }}
+          PLI_S3_ENDPOINT_URL: ${{ vars.PLI_S3_ENDPOINT_URL }}
+          PLI_S3_REGION: ${{ vars.PLI_S3_REGION }}
+          PLI_S3_ACCESS_KEY: ${{ secrets.PLI_S3_ACCESS_KEY }}
+          PLI_S3_SECRET_KEY: ${{ secrets.PLI_S3_SECRET_KEY }}
+          PLI_S3_BUCKET: ${{ vars.PLI_S3_BUCKET }}
+          PLI_EMAIL_PROVIDER: ${{ vars.PLI_EMAIL_PROVIDER }}
+          PLI_EMAIL_FROM: ${{ vars.PLI_EMAIL_FROM }}
+          PLI_EMAIL_API_KEY: ${{ secrets.PLI_EMAIL_API_KEY }}
+          PLI_EMAIL_SMTP_HOST: ${{ vars.PLI_EMAIL_SMTP_HOST }}
+          PLI_EMAIL_SMTP_PORT: ${{ vars.PLI_EMAIL_SMTP_PORT }}
+          PLI_EMAIL_SMTP_USER: ${{ secrets.PLI_EMAIL_SMTP_USER }}
+          PLI_EMAIL_SMTP_PASSWORD: ${{ secrets.PLI_EMAIL_SMTP_PASSWORD }}
+          PLI_BASE_URL: ${{ vars.PLI_BASE_URL }}
+          PLI_APP_URL: ${{ vars.PLI_APP_URL }}
+          PLI_CORS_ORIGINS: ${{ vars.PLI_CORS_ORIGINS }}
+          PLI_GMAIL_CLIENT_ID: ${{ vars.PLI_GMAIL_CLIENT_ID }}
+          PLI_GMAIL_CLIENT_SECRET: ${{ secrets.PLI_GMAIL_CLIENT_SECRET }}
+          PLI_GMAIL_REDIRECT_URI: ${{ vars.PLI_GMAIL_REDIRECT_URI }}
+          PLI_MS_CLIENT_ID: ${{ vars.PLI_MS_CLIENT_ID }}
+          PLI_MS_CLIENT_SECRET: ${{ secrets.PLI_MS_CLIENT_SECRET }}
+          PLI_MS_REDIRECT_URI: ${{ vars.PLI_MS_REDIRECT_URI }}
+          PLI_MS_TENANT_ID: ${{ vars.PLI_MS_TENANT_ID || 'common' }}
         run: python scripts/prod_readiness_check.py --target cloud-v1 --env staging
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # Immutable commit for the superfly/flyctl-actions v1 tag, with flyctl version pinned.
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+        with:
+          version: "0.4.51"
 
       - name: Deploy backend to Fly staging
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: flyctl deploy --remote-only --app pli-staging --config fly.toml
 
       - name: Smoke test staging health
