@@ -8,6 +8,7 @@
 # -------------------------------------------------------------------- données locales
 ~/.pli/
 .pli-dev/
+.pli-local-v1/
 *.sqlite
 *.sqlite-journal
 *.sqlite-shm
@@ -81,4 +82,6 @@ build/
 .env
 .env.*
 !.env.example
+!.env.local.example
+!.env.staging.example
 .DS_Store

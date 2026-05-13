@@ -56,10 +56,10 @@ Prod future:
 
 Variables attendues côté backend, à renseigner seulement hors Git:
 
-- `PLI_MICROSOFT_CLIENT_ID`
-- `PLI_MICROSOFT_CLIENT_SECRET`
-- `PLI_MICROSOFT_TENANT_ID` ou valeur `common` selon mode retenu
-- `PLI_MICROSOFT_REDIRECT_URI`
+- `PLI_MS_CLIENT_ID`
+- `PLI_MS_CLIENT_SECRET`
+- `PLI_MS_TENANT_ID` ou valeur `common` selon mode retenu
+- `PLI_MS_REDIRECT_URI`
 
 ## 5. Validation locale future
 

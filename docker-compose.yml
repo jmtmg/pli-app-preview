@@ -22,10 +22,10 @@ services:
       PLI_MODE: "local"
       PLI_DB_PATH: "/data/db.sqlite"
       PLI_ATTACHMENTS_DIR: "/data/att"
-      PLI_GOOGLE_CLIENT_ID: "${PLI_GOOGLE_CLIENT_ID:-}"
-      PLI_GOOGLE_CLIENT_SECRET: "${PLI_GOOGLE_CLIENT_SECRET:-}"
-      PLI_MICROSOFT_CLIENT_ID: "${PLI_MICROSOFT_CLIENT_ID:-}"
-      PLI_MICROSOFT_CLIENT_SECRET: "${PLI_MICROSOFT_CLIENT_SECRET:-}"
+      PLI_GMAIL_CLIENT_ID: "${PLI_GMAIL_CLIENT_ID:-}"
+      PLI_GMAIL_CLIENT_SECRET: "${PLI_GMAIL_CLIENT_SECRET:-}"
+      PLI_MS_CLIENT_ID: "${PLI_MS_CLIENT_ID:-}"
+      PLI_MS_CLIENT_SECRET: "${PLI_MS_CLIENT_SECRET:-}"
       PYTHONUNBUFFERED: "1"
     command: >
       bash -c "
@@ -122,13 +122,22 @@ services:
       PLI_EMAIL_SMTP_HOST: "mailhog"
       PLI_EMAIL_SMTP_PORT: "1025"
       PLI_SECRET_KEY: "dev-only-change-in-prod"
-      PLI_CLOUD_CRYPTO_KEY: "S9bHVMfIgDZF2XQm-P_C7nl8VEa5dT_4cSOehLZ6Y4w="
+      # Dev-only placeholder, not a valid Fernet key. Override for any real cloud-like smoke.
+      # Generate with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+      PLI_CLOUD_CRYPTO_KEY: "${PLI_CLOUD_CRYPTO_KEY:-dev-only-change-in-prod}"
       PLI_STRIPE_SECRET_KEY: "${PLI_STRIPE_SECRET_KEY:-sk_test_dummy}"
       PLI_STRIPE_WEBHOOK_SECRET: "${PLI_STRIPE_WEBHOOK_SECRET:-whsec_test_dummy}"
       PLI_STRIPE_PRICE_MONTHLY: "${PLI_STRIPE_PRICE_MONTHLY:-price_test_monthly}"
       PLI_STRIPE_PRICE_YEARLY: "${PLI_STRIPE_PRICE_YEARLY:-price_test_yearly}"
       PLI_BASE_URL: "http://localhost:8000"
       PLI_APP_URL: "http://localhost:5173"
+      PLI_CORS_ORIGINS: '["http://localhost:5173"]'
+      PLI_GMAIL_CLIENT_ID: "${PLI_GMAIL_CLIENT_ID:-}"
+      PLI_GMAIL_CLIENT_SECRET: "${PLI_GMAIL_CLIENT_SECRET:-}"
+      PLI_GMAIL_REDIRECT_URI: "http://localhost:8001/auth/gmail/callback"
+      PLI_MS_CLIENT_ID: "${PLI_MS_CLIENT_ID:-}"
+      PLI_MS_CLIENT_SECRET: "${PLI_MS_CLIENT_SECRET:-}"
+      PLI_MS_REDIRECT_URI: "http://localhost:8001/auth/microsoft/callback"
       PYTHONUNBUFFERED: "1"
     depends_on:
       postgres: { condition: service_healthy }

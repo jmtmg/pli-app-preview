@@ -9,18 +9,35 @@ Client email conversationnel groupé par contact (UX WhatsApp pour l'email).
 ## Démarrage rapide (dev local)
 
 ```bash
-# 1. cloner et configurer
-cp .env.example .env
-# renseigner PLI_GOOGLE_CLIENT_ID, PLI_MICROSOFT_CLIENT_ID, etc.
+# 1. générer une config locale privée (gitignorée, chmod 600)
+make local-v1-env
 
 # 2. installer
 make install
 
-# 3. lancer backend + frontend en parallèle
-make dev
+# 3. vérifier le preflight local-v1 secret-safe
+make local-v1-preflight
+
+# 4. lancer backend + frontend en parallèle avec .env.local
+make dev-local-v1
 ```
 
 Frontend disponible sur http://localhost:5173 — proxy transparent vers le backend sur :8000.
+
+Pour un fichier d’exemple sans secret réel, voir `.env.local.example`. Les credentials Gmail/Microsoft réels ne sont pas requis pour `local-v1` par défaut ; s’ils sont ajoutés, ils doivent rester hors Git.
+
+## Préparation cloud-staging secret-safe
+
+Aucun déploiement ni ressource cloud ne doit être créé sans confirmation explicite. Pour préparer la cible staging sans afficher de secrets :
+
+```bash
+cp .env.staging.example .env.staging
+chmod 600 .env.staging
+# remplir .env.staging depuis le gestionnaire de secrets uniquement
+make cloud-staging-preflight
+```
+
+Le template `.env.staging.example` est volontairement incomplet : le preflight doit rester `blocked` tant que PostgreSQL, S3/object storage, email transactionnel, OAuth Gmail/Microsoft, CORS exact et backups/restore ne sont pas provisionnés. Runbook détaillé : `docs/runbooks/cloud-staging.md`.
 
 ### Avec Docker
 
@@ -65,6 +82,8 @@ pli-app/
 ├── docker-compose.yml
 ├── Makefile
 ├── .env.example
+├── .env.local.example
+├── .env.staging.example
 └── SPRINT-1-BACKLOG.md
 ```
 
@@ -73,8 +92,12 @@ pli-app/
 | Commande              | Action                                                  |
 |-----------------------|---------------------------------------------------------|
 | `make dev`            | Backend + frontend en parallèle                         |
+| `make dev-local-v1`   | Génère/charge `.env.local`, puis lance backend + frontend |
 | `make dev-be`         | Backend seul (uvicorn --reload)                         |
 | `make dev-fe`         | Frontend seul (vite)                                    |
+| `make local-v1-env`   | Génère `.env.local` privé + chemins `.pli-local-v1/`     |
+| `make local-v1-preflight` | Vérifie la cible `local-v1` sans afficher de secrets |
+| `make cloud-staging-preflight` | Vérifie `.env.staging` pour `cloud-v1` sans afficher de valeurs |
 | `make test`           | pytest + vitest                                         |
 | `make lint`           | ruff + eslint                                           |
 | `make typecheck`      | mypy + tsc --noEmit                                     |
@@ -119,7 +142,7 @@ Voir `M1-KICKOFF.md` pour le détail du milestone actuel et `SPRINT-1-BACKLOG.md
 - OAuth 2.0 avec `state` CSRF et PKCE (Sprint 2)
 - Tokens stockés chiffrés (SQLCipher en local, `pgcrypto` en cloud)
 - Aucun email exfiltré en dehors du poste en mode local
-- `.env` toujours gitignoré — secrets Gmail/Microsoft ne doivent jamais finir dans git
+- `.env` / `.env.local` toujours gitignorés — secrets Gmail/Microsoft ne doivent jamais finir dans git
 
 ## Licence
 

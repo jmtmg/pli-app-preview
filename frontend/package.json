@@ -8,8 +8,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "fmt": "eslint . --fix && tsc --noEmit",
     "lint": "eslint . && tsc --noEmit",
     "type-check": "tsc --noEmit",
+    "typecheck": "npm run type-check",
     "test": "vitest",
     "test:e2e": "playwright test"
   },

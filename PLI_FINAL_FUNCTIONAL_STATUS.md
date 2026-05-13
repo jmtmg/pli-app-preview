@@ -112,6 +112,39 @@ Nouveaux documents de référence :
 - `docs/adr/0010-backend-v1-sqlite-mvp-canonical.md` ;
 - `docs/runbooks/oauth-microsoft-setup.md`.
 
+## Addendum production readiness — preflight secret-safe
+
+Date : 2026-05-12 CEST
+
+Nouvelle préparation non destructive ajoutée :
+
+- module backend `pli/prod_readiness.py` : évalue `local-v1` et `cloud-v1` sans afficher de secrets ;
+- CLI `backend/scripts/prod_readiness_check.py` : retourne `0` si prêt, `2` si blockers, et affiche seulement présence/absence des clés sensibles ;
+- tests `backend/tests/test_prod_readiness.py` inclus dans `make test-be` ;
+- `Makefile` mis à jour pour inclure le preflight dans les gates backend MVP (`test-be`, `lint-be`, `typecheck`) ;
+- runbook `docs/runbooks/production-readiness.md` : gates, secrets attendus, infra, déploiement, smoke et rollback pour `local-v1` / `cloud-v1`.
+
+Vérifications relancées pour cette préparation :
+
+- `make test` : backend `117 passed, 3 skipped` ; frontend `44 passed` ;
+- `make lint` : backend ruff OK ; frontend ESLint + `tsc --noEmit` OK ;
+- `make typecheck` : backend mypy MVP OK sur `10 source files` ; frontend `tsc --noEmit` OK ;
+- `cd frontend && npm run build` : build Vite/PWA OK ;
+- `git diff --check` : OK ;
+- preflight `local-v1 --env staging` : `ready` avec warning attendu `sqlcipher-key-missing` si mails réels ;
+- preflight `cloud-v1 --env production` sans secrets/infra : `blocked`, attendu.
+
+Conclusion : PLI reste livrable comme MVP `local-v1` préparé, mais `cloud-v1` est volontairement bloqué tant que PostgreSQL/S3/email/OAuth/CORS/crypto/secrets officiels ne sont pas fournis via gestionnaire de secrets.
+
+Addendum correctif après revue Kanban production readiness :
+
+- audit `ops` Kanban `t_d0626301` terminé ; revue `reviewer` `t_4ba93b34` a rendu `REQUEST_CHANGES` sur les points prod/release ;
+- corrections locales appliquées sans déploiement ni secret : graphe Alembic rétabli via placeholder M3 no-op, types FK M4 alignés sur `users.id`, Dockerfile Fly ajusté pour le contexte racine, `.dockerignore` racine ajouté, variables OAuth docs/compose alignées sur `PLI_GMAIL_*` / `PLI_MS_*`, scripts frontend `typecheck`/`fmt` ajoutés ;
+- vérifié après correction : `alembic heads` → `m4_beta_2026_08_12 (head)` ; upgrade Alembic SQLite temporaire jusqu’à head OK ; `npm run typecheck` OK ; `make test`, `make lint`, `make typecheck`, build frontend et `git diff --check` OK ; scan secret-like sur fichiers modifiés/non suivis : `0 finding` ;
+- Docker build non exécuté car Docker daemon indisponible localement ; correction validée statiquement contre le contexte Fly (`backend/Dockerfile` depuis racine).
+
+Ce qui reste bloquant pour `cloud-v1` : vrais secrets/infra/OAuth/email/DB/S3/backups et un smoke staging réel après approbation. `local-v1` reste la cible recommandée à court terme.
+
 Ce qui est terminé et vérifié :
 
 - backend FastAPI local/démo démarre ;
@@ -271,3 +304,26 @@ La décision architecture pour la v1 locale est désormais documentée :
 2. préparer séparément une migration future vers un package `pli/db/` avec `models.py`, `session.py`, SQLAlchemy, migrations, fixtures pytest et adaptation runtime local/cloud.
 
 Les flows externes Gmail/Microsoft/Stripe ne peuvent pas être finalisés sans credentials/flows officiels. Aucun secret réel n’a été affiché, copié, stocké ou inventé pendant cette exécution.
+
+## Addendum cloud-production GO/NO-GO
+
+Date : 2026-05-13 CEST
+
+Décision : `cloud-production` est **NO-GO / blocked**.
+
+Rapport dédié : `reports/cloud-production-go-no-go-2026-05-13.md`.
+
+Ce qui est maintenant débloqué :
+
+- `local-v1` reste ready : preflight relancé `status=ready`, warning non bloquant `sqlcipher-key-missing` uniquement si stockage de mails réels ;
+- `cloud-staging` dispose d'artefacts secret-safe : `.env.staging.example`, `docs/runbooks/cloud-staging.md`, `make cloud-staging-preflight`, rapport readiness ;
+- les gates et critères cloud sont documentés dans `docs/runbooks/production-readiness.md`.
+
+Ce qui bloque production :
+
+- aucun preflight `cloud-v1 --env production` ready n'est prouvé ; le check relancé en environnement vide sort `status=blocked` ;
+- secrets officiels, PostgreSQL, S3/object storage, email transactionnel, OAuth Gmail/Microsoft, frontend hosting, DNS/certificats et backup/restore restent à fournir/valider ;
+- aucun staging réel avec vrais providers n'a été déployé ni smoke-testé ;
+- Docker/build runtime cloud n'est pas prouvé dans cette tranche, seulement validé statiquement par les cartes précédentes.
+
+Conclusion : garder `local-v1` comme cible livrable court terme. Passer d'abord par un `cloud-staging` avec secrets via gestionnaire, preflight `ready`, gates verts, smoke complet et restore testé ; seulement ensuite réévaluer `cloud-production`.

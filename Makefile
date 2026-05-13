@@ -2,7 +2,8 @@
 # Testé sous macOS 14 / Linux / Windows + Git Bash.
 # Chaque cible suppose que vous êtes à la racine de `pli-app/`.
 
-.PHONY: help install install-be install-fe dev dev-be dev-fe demo \
+.PHONY: help install install-be install-fe dev dev-be dev-fe demo dev-local-v1 \
+        local-v1-env local-v1-preflight cloud-staging-preflight \
         test test-be test-be-all test-be-future test-fe test-sec lint lint-be lint-fe typecheck typecheck-all typecheck-future \
         fmt fmt-be fmt-fe clean docker-up docker-down \
         db-migrate db-revision cloud-up cloud-down stripe-listen
@@ -11,9 +12,13 @@ help:
 	@echo "PLI — cibles disponibles :"
 	@echo "  install        installe backend + frontend"
 	@echo "  dev            lance backend + frontend en parallèle"
+	@echo "  dev-local-v1   génère/charge .env.local puis lance backend + frontend"
 	@echo "  dev-be         backend uniquement (uvicorn --reload)"
 	@echo "  dev-fe         frontend uniquement (vite)"
 	@echo "  demo           lance backend demo + frontend"
+	@echo "  local-v1-env   génère .env.local privé + chemins .pli-local-v1/"
+	@echo "  local-v1-preflight vérifie .env.local pour la cible local-v1"
+	@echo "  cloud-staging-preflight vérifie .env.staging pour cloud-v1 sans afficher de valeurs"
 	@echo "  test           exécute les tests MVP des deux côtés"
 	@echo "  test-sec       rejoue les tests d'isolation tenant (CI blocker historique)"
 	@echo "  test-be-future rejoue les strates backend futures isolées (doit échouer tant que non intégrées)"
@@ -56,6 +61,25 @@ demo:
 	@echo ">> Lancement demo locale: backend :8000 + frontend :5173"
 	@PLI_DEMO=true PLI_DB_PATH=$$(pwd)/.pli-dev/db.sqlite PLI_ATTACHMENTS_DIR=$$(pwd)/.pli-dev/att $(MAKE) -j2 dev-be dev-fe
 
+local-v1-env:
+	@if [ -f .env.local ]; then \
+		echo ">> .env.local existe déjà (gitignoré) ; pour rotater, sauvegardez/supprimez-le puis relancez make local-v1-env"; \
+	else \
+		python3 scripts/generate_local_v1_env.py; \
+	fi
+
+local-v1-preflight:
+	@test -f .env.local || (echo ">> .env.local absent ; lancez make local-v1-env" && exit 1)
+	cd backend && $(BACKEND_PY) scripts/prod_readiness_check.py --target local-v1 --env staging --dotenv ../.env.local --show-env-keys
+
+cloud-staging-preflight:
+	@test -f .env.staging || (echo ">> .env.staging absent ; copiez .env.staging.example puis renseignez via gestionnaire de secrets" && exit 1)
+	cd backend && $(BACKEND_PY) scripts/prod_readiness_check.py --target cloud-v1 --env staging --dotenv ../.env.staging
+
+dev-local-v1:
+	@test -f .env.local || $(MAKE) local-v1-env
+	@set -a; . ./.env.local; set +a; $(MAKE) -j2 dev-be dev-fe
+
 # -------------------------------------------------------------------- qa
 
 BACKEND_PY ?= .venv/bin/python
@@ -76,14 +100,25 @@ BACKEND_MVP_TESTS := \
 	tests/test_storage_adapters.py \
 	tests/test_sync_gmail.py \
 	tests/test_licensing.py \
-	tests/test_emails.py
+	tests/test_emails.py \
+	tests/test_prod_readiness.py \
+	tests/test_local_v1_env_generator.py
 
-BACKEND_MVP_LINT_TARGETS := pli tests/test_demo_mvp.py tests/test_local_demo.py tests/test_drafts.py
+BACKEND_MVP_LINT_TARGETS := \
+	pli \
+	scripts/prod_readiness_check.py \
+	../scripts/generate_local_v1_env.py \
+	tests/test_demo_mvp.py \
+	tests/test_local_demo.py \
+	tests/test_drafts.py \
+	tests/test_prod_readiness.py \
+	tests/test_local_v1_env_generator.py
 
 BACKEND_MVP_TYPECHECK_TARGETS := \
 	pli/config.py \
 	pli/db.py \
 	pli/demo.py \
+	pli/prod_readiness.py \
 	pli/api/accounts.py \
 	pli/api/contacts.py \
 	pli/api/conversations.py \

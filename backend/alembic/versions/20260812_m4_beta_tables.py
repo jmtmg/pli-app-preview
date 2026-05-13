@@ -47,7 +47,7 @@ def upgrade() -> None:
         sa.Column("email", sa.String(320), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("redeemed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("redeemed_by_user_id", sa.BigInteger, sa.ForeignKey("users.id"), nullable=True),
+        sa.Column("redeemed_by_user_id", sa.String, sa.ForeignKey("users.id"), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
     op.create_index("ix_invitations_batch", "invitations", ["batch_number"])
@@ -73,7 +73,7 @@ def upgrade() -> None:
     op.create_table(
         "activation_events",
         sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
-        sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id"), nullable=False),
+        sa.Column("user_id", sa.String, sa.ForeignKey("users.id"), nullable=False),
         sa.Column("event", sa.String(40), nullable=False, comment="signup, email_verified, oauth_connected, first_sync, tour_completed, first_send"),
         sa.Column("batch_number", sa.Integer, nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
