@@ -1,9 +1,15 @@
 name: Deploy staging
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type deploy-staging to confirm a staging deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 concurrency:
   group: deploy-staging
@@ -11,26 +17,69 @@ concurrency:
 
 jobs:
   deploy:
+    name: deploy-staging
+    if: ${{ inputs.confirm == 'deploy-staging' }}
     runs-on: ubuntu-latest
-    needs: []
+    timeout-minutes: 30
     environment: staging
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      PLI_MODE: cloud
+      PLI_ENABLE_M2: "false"
+      PLI_DEBUG: "false"
+      PLI_DEMO: "false"
+      PLI_SECRET_KEY: ${{ secrets.PLI_SECRET_KEY }}
+      PLI_DATABASE_URL: ${{ secrets.PLI_DATABASE_URL }}
+      PLI_CLOUD_CRYPTO_KEY: ${{ secrets.PLI_CLOUD_CRYPTO_KEY }}
+      PLI_S3_ENDPOINT_URL: ${{ vars.PLI_S3_ENDPOINT_URL }}
+      PLI_S3_ACCESS_KEY: ${{ secrets.PLI_S3_ACCESS_KEY }}
+      PLI_S3_SECRET_KEY: ${{ secrets.PLI_S3_SECRET_KEY }}
+      PLI_S3_BUCKET: ${{ vars.PLI_S3_BUCKET }}
+      PLI_EMAIL_PROVIDER: ${{ vars.PLI_EMAIL_PROVIDER }}
+      PLI_EMAIL_API_KEY: ${{ secrets.PLI_EMAIL_API_KEY }}
+      PLI_EMAIL_SMTP_HOST: ${{ vars.PLI_EMAIL_SMTP_HOST }}
+      PLI_BASE_URL: ${{ vars.PLI_BASE_URL }}
+      PLI_APP_URL: ${{ vars.PLI_APP_URL }}
+      PLI_CORS_ORIGINS: ${{ vars.PLI_CORS_ORIGINS }}
+      PLI_GMAIL_CLIENT_ID: ${{ vars.PLI_GMAIL_CLIENT_ID }}
+      PLI_GMAIL_CLIENT_SECRET: ${{ secrets.PLI_GMAIL_CLIENT_SECRET }}
+      PLI_GMAIL_REDIRECT_URI: ${{ vars.PLI_GMAIL_REDIRECT_URI }}
+      PLI_MS_CLIENT_ID: ${{ vars.PLI_MS_CLIENT_ID }}
+      PLI_MS_CLIENT_SECRET: ${{ secrets.PLI_MS_CLIENT_SECRET }}
+      PLI_MS_REDIRECT_URI: ${{ vars.PLI_MS_REDIRECT_URI }}
+      PLI_MS_TENANT_ID: ${{ vars.PLI_MS_TENANT_ID || 'common' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy backend to fly.io
-        run: flyctl deploy --remote-only --app pli-staging --config fly.toml
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      - name: Run Alembic migrations
-        run: flyctl ssh console --app pli-staging -C "alembic upgrade head"
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      - name: Smoke test
+
+      - name: Set up Python 3.11 for preflight
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install backend runtime dependencies
+        working-directory: backend
         run: |
-          for i in 1 2 3 4 5; do
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[m2]'
+
+      - name: Secret-safe staging preflight
+        working-directory: backend
+        run: python scripts/prod_readiness_check.py --target cloud-v1 --env staging
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy backend to Fly staging
+        run: flyctl deploy --remote-only --app pli-staging --config fly.toml
+
+      - name: Smoke test staging health
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            echo "staging health attempt ${attempt}/10"
             if curl -fsS https://staging.pli.app/health; then
               exit 0
             fi
-            sleep 5
+            sleep 6
           done
           exit 1
