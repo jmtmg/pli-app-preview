@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+import pytest
+
 # Supprime les codes ANSI de coloration pour que les assertions ne soient pas
 # fragiles vis-a-vis du renderer console pretty.
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
@@ -50,6 +52,30 @@ def test_root_returns_version(client, isolated_settings):  # type: ignore[no-unt
     assert r["name"] == "PLI"
     assert "version" in r
     assert r["mode"] == "local"
+
+
+@pytest.mark.asyncio
+async def test_cloud_lifespan_initializes_and_closes_pg_pool(monkeypatch):  # type: ignore[no-untyped-def]
+    from pli import main
+    from pli.config import settings
+
+    calls: list[str] = []
+
+    async def fake_init_cloud() -> None:
+        calls.append("init_cloud")
+
+    async def fake_close_cloud() -> None:
+        calls.append("close_cloud")
+
+    monkeypatch.setattr(settings, "mode", "cloud")
+    monkeypatch.setattr(main, "init_db", lambda: calls.append("init_dispatch"))
+    monkeypatch.setattr(main, "init_db_cloud", fake_init_cloud)
+    monkeypatch.setattr(main, "close_db_cloud", fake_close_cloud)
+
+    async with main.lifespan(main.app):
+        calls.append("running")
+
+    assert calls == ["init_dispatch", "init_cloud", "running", "close_cloud"]
 
 
 # --------------------------------------------------------------------------

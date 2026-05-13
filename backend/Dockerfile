@@ -10,7 +10,7 @@ COPY README.md ./README.md
 COPY backend/pyproject.toml ./backend/pyproject.toml
 COPY backend/pli ./backend/pli
 WORKDIR /app/backend
-RUN pip install --upgrade pip && pip install -e .
+RUN pip install --upgrade pip && pip install -e '.[m2]'
 
 FROM python:3.11-slim AS runtime
 

@@ -17,6 +17,8 @@ services:
     working_dir: /app
     volumes:
       - ./backend:/app
+      # backend/pyproject.toml declares readme = "../README.md".
+      - ./README.md:/README.md:ro
       - pli_data:/data
     environment:
       PLI_MODE: "local"
@@ -29,7 +31,7 @@ services:
       PYTHONUNBUFFERED: "1"
     command: >
       bash -c "
-        pip install -e .[dev] --quiet &&
+        pip install -e '.[dev]' --quiet &&
         uvicorn pli.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir pli
       "
     ports:
@@ -111,9 +113,13 @@ services:
     working_dir: /app
     volumes:
       - ./backend:/app
+      # backend/pyproject.toml declares readme = "../README.md".
+      - ./README.md:/README.md:ro
     environment:
       PLI_MODE: "cloud"
-      PLI_DATABASE_URL: "postgresql://pli:pli@postgres:5432/pli"
+      # Dev-only password matches the local postgres service above.
+      # Real staging/prod must inject PLI_DATABASE_URL via the platform secret manager.
+      PLI_DATABASE_URL: "${PLI_DATABASE_URL:-postgresql://pli:pli@postgres:5432/pli}"
       PLI_S3_ENDPOINT_URL: "http://minio:9000"
       PLI_S3_ACCESS_KEY: "minioadmin"
       PLI_S3_SECRET_KEY: "minioadmin"
@@ -145,7 +151,7 @@ services:
       mailhog: { condition: service_started }
     command: >
       bash -c "
-        pip install -e .[dev] --quiet &&
+        pip install -e '.[m2,dev]' --quiet &&
         alembic upgrade head &&
         uvicorn pli.main:app --host 0.0.0.0 --port 8000 --reload
       "

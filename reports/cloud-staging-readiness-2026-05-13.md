@@ -1,6 +1,6 @@
 # PLI cloud-staging readiness — 2026-05-13
 
-Statut : prepared / blocked-on-human-providers. Aucun déploiement, DNS, restart, install `flyctl`, création cloud ou manipulation de secret réel n'a été effectué.
+Statut : prepared / blocked-on-human-providers. Aucun déploiement cloud, DNS, restart distant, install `flyctl`, création cloud ou manipulation de secret réel n'a été effectué. Mise à jour locale : Docker/Compose/Buildx/Colima ont été installés sur le Mac mini pour prouver les gates Docker en environnement local isolé ; la stack compose cloud locale a été arrêtée après smoke.
 
 ## Artefacts ajoutés ou modifiés
 
@@ -11,6 +11,9 @@ Statut : prepared / blocked-on-human-providers. Aucun déploiement, DNS, restart
 - `docs/runbooks/production-readiness.md` : ajout du flux cloud-staging et suppression de `--show-env-keys` pour les commandes cloud.
 - `fly.toml` : `PLI_ENABLE_M2=false` explicite et commentaires secrets durcis vers secret manager / import approuvé.
 - `.gitignore` : autorise `.env.staging.example`, continue d'ignorer `.env.staging` via `.env.*`.
+- `backend/Dockerfile` : installation des dépendances cloud `m2` dans l'image runtime pour que le driver PostgreSQL/Alembic soit présent.
+- `docker-compose.yml` : montage README requis par `backend/pyproject.toml`, cloud-app installée en `.[m2,dev]`, URL Postgres locale overrideable par variable d'environnement.
+- `backend/pli/main.py` : le lifespan cloud initialise et ferme explicitement le pool asyncpg.
 
 ## Commande preflight staging
 
@@ -30,14 +33,17 @@ cd /Users/jm/context-engine/projects/pli-app/backend
 
 Résultat : `status=blocked`, `preflight exit=2`, sans valeurs imprimées. Blockers détectés avec le template : secret applicatif, PostgreSQL, clé crypto cloud, S3 endpoint/access/secret, email provider, OAuth Gmail, OAuth Microsoft. Info : `m2-disabled` attendu.
 
-## Checks statiques exécutés
+## Checks statiques et smoke local exécutés
 
 - `tomllib.load(open('fly.toml','rb'))` : OK.
 - Parse YAML `docker-compose.yml` via PyYAML : OK ; services détectés `backend, cloud-app, frontend, mailhog, minio, minio-init, postgres, stripe-cli`.
 - `fly.toml` → `build.dockerfile=backend/Dockerfile` existe : OK.
 - `fly.toml` env statique : `PLI_MODE=cloud`, `PLI_ENABLE_M2=false` : OK.
 - `backend/Dockerfile` marqueurs statiques : `USER pli`, `HEALTHCHECK`, `alembic -c alembic.ini upgrade head`, `uvicorn pli.main:app` présents.
-- `docker compose config --quiet` : non exécuté, Docker CLI absent dans cette session (`docker: command not found`) ; aucun build Docker prouvé.
+- `docker compose -f docker-compose.yml config` : OK après installation locale Docker/Compose.
+- `docker build -f backend/Dockerfile -t pli-backend:local-readiness .` : OK avec dépendances `m2`.
+- Smoke compose cloud local avec Postgres + MinIO + MailHog + clé Fernet éphémère : `/health` retourne `status=ok`, `mode=cloud`, `db.ok=true`, `users=0`.
+- Smoke image `pli-backend:local-readiness` sur réseau compose local : `/health` retourne `status=ok`, `mode=cloud`, `db.ok=true`, `users=0`.
 - `make -n cloud-staging-preflight` : OK, cible résolue et n'utilise pas `--show-env-keys`.
 - `git check-ignore -v .env.staging` : ignoré par `.gitignore:83:.env.*`.
 - `git check-ignore -v .env.staging.example` : autorisé par `.gitignore:86:!.env.staging.example`.

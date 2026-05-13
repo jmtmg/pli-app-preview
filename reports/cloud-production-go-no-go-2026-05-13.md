@@ -2,7 +2,7 @@
 
 Statut : NO-GO / blocked pour cloud-production.
 
-Cette décision est non destructive : aucun déploiement, DNS, migration DB, restart, installation cloud, lecture ou impression de secret réel n'a été effectué.
+Cette décision est non destructive côté cloud : aucun déploiement, DNS, migration DB distante, restart distant, installation cloud, lecture ou impression de secret réel n'a été effectué. Une installation locale Docker/Compose/Buildx/Colima a été faite sur le Mac mini pour prouver build + smoke en environnement local isolé.
 
 ## Verdict production
 
@@ -19,18 +19,21 @@ La production cloud ne doit pas être déclarée ready aujourd'hui. Les artefact
 
 ### Vérifications relancées pendant cette synthèse
 
-- `git status --short --branch` : branche `main`, changements non commités et nouveaux artefacts de readiness présents.
+- `git status --short --branch` : branche `chore/pli-local-cloud-readiness`, changements de smoke Docker prêts à commit.
 - `git diff --check` : OK.
 - `make local-v1-preflight` : `status=ready`, warning non bloquant `sqlcipher-key-missing`.
 - `make cloud-staging-preflight` : bloqué volontairement tant que `.env.staging` privé n'existe pas et que les providers/secrets ne sont pas renseignés.
-- `make test-be` : `122 passed, 3 skipped`.
+- `make test-be` : `123 passed, 3 skipped`.
 - `make lint-be` : ruff OK.
 - `make typecheck` : backend mypy MVP OK + frontend `tsc --noEmit` OK.
 - `make test-fe` : `44 passed`.
 - `make lint-fe` : ESLint + `tsc --noEmit` OK.
 - `cd frontend && npm run build` : build Vite/PWA OK.
 - `docker-compose.yml` : YAML parse OK ; `fly.toml` : TOML parse OK.
-- `docker compose config` / `docker build` : non relancés ici car Docker CLI/daemon indisponible sur cet hôte ; gate à prouver sur le premier hôte Docker disponible.
+- `docker compose -f docker-compose.yml config` : OK.
+- `docker build -f backend/Dockerfile -t pli-backend:local-readiness .` : OK.
+- Smoke compose cloud local : `/health` `status=ok`, `mode=cloud`, `db.ok=true`, stack arrêtée ensuite.
+- Smoke image Docker `pli-backend:local-readiness` : `/health` `status=ok`, `mode=cloud`, `db.ok=true`.
 
 ## Ce qui est débloqué par le repo
 
@@ -54,7 +57,7 @@ La production cloud ne doit pas être déclarée ready aujourd'hui. Les artefact
 ### P1 — risques à lever avant release candidate production
 
 - Frontend cloud non tranché : même origine derrière reverse proxy vs hosting statique séparé ; impact direct sur `PLI_APP_URL`, `VITE_API_URL`, `PLI_CORS_ORIGINS`.
-- Docker/build runtime non prouvé dans cette session : les checks statiques sont OK, mais le build Docker/compose réel n'a pas été prouvé faute de Docker CLI/daemon dans la carte précédente.
+- Runtime Docker local maintenant prouvé ; il reste à prouver le build/déploiement dans la plateforme staging retenue avec secrets manager officiel.
 - DNS/certificats production non vérifiés publiquement.
 - Observabilité minimale à brancher : uptime `/health`, alertes 5xx, DB/storage/email, logs sans secrets.
 - Politique CORS production à verrouiller sur origines HTTPS exactes, sans wildcard ni localhost.

@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .api import accounts, auth, contacts, conversations, demo, messages, search
 from .config import settings
-from .db import get_conn, healthcheck, init_db
+from .db import close_db_cloud, get_conn, healthcheck, init_db, init_db_cloud
 from .logging_config import RequestLoggingMiddleware, configure_logging
 
 configure_logging()
@@ -31,13 +31,19 @@ log = structlog.get_logger()
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     log.info("pli_starting", version=__version__, mode=settings.mode)
     init_db()
+    if settings.mode == "cloud":
+        await init_db_cloud()
     if settings.mode == "local" and settings.demo:
         from .demo import seed_demo_data
 
         demo_counts = seed_demo_data()
         log.info("pli_demo_seeded", **demo_counts)
-    yield
-    log.info("pli_stopping")
+    try:
+        yield
+    finally:
+        if settings.mode == "cloud":
+            await close_db_cloud()
+        log.info("pli_stopping")
 
 
 app = FastAPI(
