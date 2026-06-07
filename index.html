@@ -5,9 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0b0c" />
     <title>PLI</title>
-    <script type="module" crossorigin src="/assets/index-CedUM1ZY.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-IHMCnnYt.css">
-  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+    <!-- Inline mock: intercept frontend requests to provide demo data when backend is missing -->
+    <script>
+    (function(){
+      try{
+        const realFetch = window.fetch.bind(window);
+        window.fetch = function(input, init){
+          let url = (typeof input === 'string') ? input : (input && input.url) || '';
+          try{
+            const u = new URL(url, location.origin);
+            if (u.pathname === '/conversations' && u.searchParams.get('filter') === 'humans'){
+              const sample = {"conversations":[{"id":"1","title":"Conversation humaine 1","messages":[{"from":"Alice","text":"Bonjour — ceci est une démo."},{"from":"Bob","text":"Salut — test PLI demo."}]}]};
+              const body = JSON.stringify(sample);
+              return Promise.resolve(new Response(body, {status:200, headers:{'Content-Type':'application/json; charset=utf-8'}}));
+            }
+          }catch(e){ /* ignore parsing errors and fallthrough to real fetch */ }
+          return realFetch(input, init);
+        };
+      }catch(e){ /* older browsers — no-op */ }
+    })();
+    </script>
+    <script type="module" crossorigin src="assets/index-CedUM1ZY.js"></script>
+    <link rel="stylesheet" crossorigin href="assets/index-IHMCnnYt.css">
+  <link rel="manifest" href="manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="registerSW.js"></script></head>
   <body>
     <div id="root"></div>
   </body>
